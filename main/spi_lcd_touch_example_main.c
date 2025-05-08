@@ -16,7 +16,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "lvgl.h"
-#include "esp_lcd_st7789v3.h"
+// #include "esp_lcd_st7789v3.h"÷
 
 
 #include <stdio.h>
@@ -33,7 +33,7 @@
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_GC9A01
 #include "esp_lcd_gc9a01.h"
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_ST7789
-#include "esp_lcd_st7789.h"
+#include "esp_lcd_st7789v3.h"
 #endif
 
 #if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_STMPE610

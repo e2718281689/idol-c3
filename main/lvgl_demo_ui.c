@@ -126,8 +126,8 @@ void example_lvgl_demo_ui(lv_disp_t *disp)
 
     /*Now create the actual image*/
     lv_obj_t * img = lv_img_create(lv_scr_act());
-    lv_img_set_src(img, "A:/littlefs/moiw_2014.bin");
-    // lv_img_set_src(img, &moiw_2014);
+    // lv_img_set_src(img, "A:/littlefs/moiw_2014.bin");
+    lv_img_set_src(img, &moiw_2014);
     lv_obj_align(img, LV_ALIGN_CENTER, 50, 50);
     lv_img_set_pivot(img, 0, 0);    /*Rotate around the top left corner*/
 
