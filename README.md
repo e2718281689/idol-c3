@@ -1,19 +1,3 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
-
-# esp-idf lvgl st7789
-## 基于ESP-IDF v5.0 [spi_lcd_touch](https://gitee.com/EspressifSystems/esp-idf/tree/master/examples/peripherals/lcd/spi_lcd_touch) 修改
-### 官方示例 只支持了 ILI9341 和 GC9A01，在idf中，有提供 [st7789 的驱动文件](https://gitee.com/EspressifSystems/esp-idf/blob/master/components/esp_lcd/src/esp_lcd_panel_st7789.c)  
-![demo](https://gitee.com/lai-shanhai/spi_lvgl_st7789/raw/master/resource/jpg/lvgl_st7789.png)
-### 新建一个components, 
-并且在修改 main.c, 在menuconfig 中， LCD Controller 选择 ST7789.  
-另外，我的屏幕是RBG显示的，不是RGB，如果上传发现颜色显示错误，在 220行，改为 .rgb_endian = LCD_RGB_ENDIAN_RGB   
-``#219 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_ST7789``  
-``#220        .rgb_endian = LCD_RGB_ENDIAN_RGB,`` 
-
-<br><br><br>
-# 下面是原来的 README.md  
-<br>
 
 # SPI LCD and Touch Panel Example
 
