@@ -174,37 +174,12 @@ static esp_err_t app_lvgl_deinit(void)
     return ESP_OK;
 }
 
-void *read_file_to_ram(const char *path, size_t *out_size) {
-    FILE *f = fopen(path, "rb");
-    if (!f) {
-        printf("Failed to open file: %s\n", path);
-        return NULL;
-    }
 
-    fseek(f, 0, SEEK_END);
-    size_t size = ftell(f);
-    rewind(f);
-
-    void *buf = malloc(size);
-    if (!buf) {
-        printf("Failed to allocate memory (%zu bytes)\n", size);
-        fclose(f);
-        return NULL;
-    }
-
-    size_t read_size = fread(buf, 1, size, f);
-    fclose(f);
-
-    if (read_size != size) {
-        printf("Read size mismatch: expected %zu, got %zu\n", size, read_size);
-        free(buf);
-        return NULL;
-    }
-
-    if (out_size) *out_size = size;
-    return buf;
+// 动画回调：设置角度
+static void set_rotation(void *obj, int32_t v)
+{
+    lv_obj_set_style_transform_rotation((lv_obj_t *)obj, v, 0);
 }
-
 static void app_main_display(void)
 {
     lv_obj_t *scr = lv_scr_act();
@@ -217,6 +192,33 @@ static void app_main_display(void)
     // 设置背景颜色为黄色（RGB: 255, 255, 0）
     lv_obj_set_style_bg_color(scr, lv_color_make(255, 255, 0), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
+
+    lv_obj_t *img = lv_image_create(lv_screen_active());
+    lv_image_set_src(img, "A:/littlefs/moiw_2014_240.bin");
+
+
+    // 居中
+    lv_obj_center(img);
+
+    // 设置旋转锚点为图片中心
+    lv_coord_t w = lv_obj_get_width(img);
+    lv_coord_t h = lv_obj_get_height(img);
+    lv_obj_set_style_transform_pivot_x(img, 120, 0);
+    lv_obj_set_style_transform_pivot_y(img, 120, 0);
+
+    // 可选：初始角度为 0
+    lv_obj_set_style_transform_rotation(img, 0, 0);
+
+    // 创建动画
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, img);
+    lv_anim_set_exec_cb(&a, set_rotation);
+    lv_anim_set_values(&a, 0, 3600);               // 旋转 360°（单位是 0.1°）
+    lv_anim_set_time(&a, 3000);                    // 动画时长 3 秒
+    lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE); // 无限循环
+    lv_anim_set_path_cb(&a, lv_anim_path_linear);  // 匀速旋转
+    lv_anim_start(&a);
 
     /* Task unlock */
     lvgl_port_unlock();
@@ -293,6 +295,15 @@ void lvgl_main()
     app_main_display();
 }
 
+void lvgl_task(void *pvParameters)
+{
+
+    while (1) {
+        lv_timer_handler();
+        vTaskDelay(pdMS_TO_TICKS(100));  // 推荐 5~20ms
+    }
+}
+
 void app_main(void)
 {
 
@@ -324,11 +335,12 @@ void app_main(void)
 
     lvgl_main();
 
+
+    xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 1, NULL, 0);
+
+
     while (1) {
-        // raise the task priority of LVGL and/or reduce the handler period can improve the performance
-        vTaskDelay(pdMS_TO_TICKS(10));
-        // The task running lv_timer_handler should have lower priority than that running `lv_tick_inc`
-        lv_timer_handler();
+
     }
 
 }
