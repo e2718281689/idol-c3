@@ -1,5 +1,4 @@
 build/
-components/
 managed_components/
 
 dependencies.lock
