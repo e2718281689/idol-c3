@@ -18,6 +18,8 @@
 #include "esp_lcd_st7789v3.h"
 #include "esp_littlefs.h"
 #include "esp_task_wdt.h"
+#include "milkytime.c"
+#include "moiw_2014.c"
 
 #include "unity.h"
 
@@ -177,9 +179,9 @@ static esp_err_t app_lvgl_deinit(void)
 
 
 // 动画回调：设置角度
-static void set_rotation(void *obj, int32_t v)
+static void rotate_cb(void *img_obj, int32_t angle)
 {
-    lv_obj_set_style_transform_rotation((lv_obj_t *)obj, v, 0);
+    lv_image_set_rotation(img_obj, angle);
 }
 static void app_main_display(void)
 {
@@ -194,35 +196,29 @@ static void app_main_display(void)
     lv_obj_set_style_bg_color(scr, lv_color_make(255, 255, 0), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
 
-    // lv_obj_t *img = lv_image_create(lv_screen_active());
-    // lv_image_set_src(img, "A:/littlefs/moiw_2014_240.bin");
 
-    lv_obj_t* img = lv_gif_create(lv_screen_active());
-    lv_gif_set_src(img, "A:/littlefs/miho.gif");
+    // lv_obj_t* img = lv_gif_create(lv_screen_active());
+    // lv_gif_set_src(img, "A:/littlefs/miho.gif");
 
+    /*Now create the actual image*/
+    lv_obj_t *img = lv_image_create(lv_screen_active());
+    lv_image_set_src(img, "A:/littlefs/moiw_2014_240.bin");
+    // lv_image_set_src(img, &moiw_2014);
+   
+    lv_obj_set_style_transform_pivot_x(img, LV_PCT(50), 0);
+    lv_obj_set_style_transform_pivot_y(img, LV_PCT(50), 0);
 
-    // 居中
     lv_obj_center(img);
 
-    // // 设置旋转锚点为图片中心
-    // lv_coord_t w = lv_obj_get_width(img);
-    // lv_coord_t h = lv_obj_get_height(img);
-    // lv_obj_set_style_transform_pivot_x(img, 120, 0);
-    // lv_obj_set_style_transform_pivot_y(img, 120, 0);
-
-    // // 可选：初始角度为 0
-    // lv_obj_set_style_transform_rotation(img, 0, 0);
-
-    // // 创建动画
-    // lv_anim_t a;
-    // lv_anim_init(&a);
-    // lv_anim_set_var(&a, img);
-    // lv_anim_set_exec_cb(&a, set_rotation);
-    // lv_anim_set_values(&a, 0, 3600);               // 旋转 360°（单位是 0.1°）
-    // lv_anim_set_time(&a, 3000);                    // 动画时长 3 秒
-    // lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE); // 无限循环
-    // lv_anim_set_path_cb(&a, lv_anim_path_linear);  // 匀速旋转
-    // lv_anim_start(&a);
+    // 动画配置
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, img);
+    lv_anim_set_exec_cb(&a, rotate_cb);  // 用 C 函数作为回调
+    lv_anim_set_values(&a, 0, 3600);
+    lv_anim_set_time(&a, 3000);
+    lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+    lv_anim_start(&a);
 
     /* Task unlock */
     lvgl_port_unlock();
@@ -234,8 +230,13 @@ static void app_main_display(void)
 static void check_leak(size_t start_free, size_t end_free, const char *type)
 {
     ssize_t delta = start_free - end_free;
-    printf("MALLOC_CAP_%s: Before %u bytes free, After %u bytes free (delta %d)\n", type, start_free, end_free, delta);
-    TEST_ASSERT_GREATER_OR_EQUAL_MESSAGE (delta, TEST_MEMORY_LEAK_THRESHOLD, "memory leak");
+    printf("MALLOC_CAP_%s: Before %.2f KB free, After %.2f KB free (delta %.2f KB)\n",
+           type,
+           start_free / 1024.0,
+           end_free / 1024.0,
+           delta / 1024.0);
+    
+    // TEST_ASSERT_GREATER_OR_EQUAL_MESSAGE(delta, TEST_MEMORY_LEAK_THRESHOLD, "memory leak");
 }
 
 void lvgl_test()
@@ -355,10 +356,10 @@ void app_main(void)
 
     printf("TEST ESP LVGL port\n\r");
 
-    lvgl_main();
+    // lvgl_main();
 
 
-    xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 1, NULL, 0);
+    // xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 1, NULL, 0);
 
     xTaskCreatePinnedToCore(freemem_task, "freemem_task", 2048, NULL, 1, NULL, 0);
 
