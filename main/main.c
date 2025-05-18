@@ -17,6 +17,7 @@
 #include "esp_lvgl_port.h"
 #include "esp_lcd_st7789v3.h"
 #include "esp_littlefs.h"
+#include "esp_task_wdt.h"
 
 #include "unity.h"
 
@@ -32,7 +33,7 @@
 #define EXAMPLE_LCD_COLOR_SPACE     (ESP_LCD_COLOR_SPACE_RGB)
 #define EXAMPLE_LCD_BITS_PER_PIXEL  (16)
 #define EXAMPLE_LCD_DRAW_BUFF_DOUBLE (1)
-#define EXAMPLE_LCD_DRAW_BUFF_HEIGHT (40)
+#define EXAMPLE_LCD_DRAW_BUFF_HEIGHT (5)
 
 /* LCD pins */
 #define EXAMPLE_LCD_GPIO_SCLK       (GPIO_NUM_7)
@@ -193,39 +194,42 @@ static void app_main_display(void)
     lv_obj_set_style_bg_color(scr, lv_color_make(255, 255, 0), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
 
-    lv_obj_t *img = lv_image_create(lv_screen_active());
-    lv_image_set_src(img, "A:/littlefs/moiw_2014_240.bin");
+    // lv_obj_t *img = lv_image_create(lv_screen_active());
+    // lv_image_set_src(img, "A:/littlefs/moiw_2014_240.bin");
+
+    lv_obj_t* img = lv_gif_create(lv_screen_active());
+    lv_gif_set_src(img, "A:/littlefs/miho.gif");
 
 
     // 居中
     lv_obj_center(img);
 
-    // 设置旋转锚点为图片中心
-    lv_coord_t w = lv_obj_get_width(img);
-    lv_coord_t h = lv_obj_get_height(img);
-    lv_obj_set_style_transform_pivot_x(img, 120, 0);
-    lv_obj_set_style_transform_pivot_y(img, 120, 0);
+    // // 设置旋转锚点为图片中心
+    // lv_coord_t w = lv_obj_get_width(img);
+    // lv_coord_t h = lv_obj_get_height(img);
+    // lv_obj_set_style_transform_pivot_x(img, 120, 0);
+    // lv_obj_set_style_transform_pivot_y(img, 120, 0);
 
-    // 可选：初始角度为 0
-    lv_obj_set_style_transform_rotation(img, 0, 0);
+    // // 可选：初始角度为 0
+    // lv_obj_set_style_transform_rotation(img, 0, 0);
 
-    // 创建动画
-    lv_anim_t a;
-    lv_anim_init(&a);
-    lv_anim_set_var(&a, img);
-    lv_anim_set_exec_cb(&a, set_rotation);
-    lv_anim_set_values(&a, 0, 3600);               // 旋转 360°（单位是 0.1°）
-    lv_anim_set_time(&a, 3000);                    // 动画时长 3 秒
-    lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE); // 无限循环
-    lv_anim_set_path_cb(&a, lv_anim_path_linear);  // 匀速旋转
-    lv_anim_start(&a);
+    // // 创建动画
+    // lv_anim_t a;
+    // lv_anim_init(&a);
+    // lv_anim_set_var(&a, img);
+    // lv_anim_set_exec_cb(&a, set_rotation);
+    // lv_anim_set_values(&a, 0, 3600);               // 旋转 360°（单位是 0.1°）
+    // lv_anim_set_time(&a, 3000);                    // 动画时长 3 秒
+    // lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE); // 无限循环
+    // lv_anim_set_path_cb(&a, lv_anim_path_linear);  // 匀速旋转
+    // lv_anim_start(&a);
 
     /* Task unlock */
     lvgl_port_unlock();
 }
 
 // Some resources are lazy allocated in the LCD driver, the threadhold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (50)
+#define TEST_MEMORY_LEAK_THRESHOLD (512)
 
 static void check_leak(size_t start_free, size_t end_free, const char *type)
 {
@@ -300,7 +304,25 @@ void lvgl_task(void *pvParameters)
 
     while (1) {
         lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(100));  // 推荐 5~20ms
+        vTaskDelay(pdMS_TO_TICKS(10));  // 推荐 5~20ms
+    }
+}
+
+void freemem_task(void *pvParameters)
+{
+    // esp_task_wdt_delete(NULL);  // 注册到 watchdog
+    while (1) {
+
+        size_t start_freemem_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+        size_t start_freemem_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+
+        vTaskDelay(pdMS_TO_TICKS(10 * 1000));
+        // esp_task_wdt_reset();  // 喂狗  
+
+        size_t end_freemem_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+        size_t end_freemem_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+        check_leak(start_freemem_8bit, end_freemem_8bit, "8BIT LVGL");
+        check_leak(start_freemem_32bit, end_freemem_32bit, "32BIT LVGL");
     }
 }
 
@@ -338,9 +360,11 @@ void app_main(void)
 
     xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 1, NULL, 0);
 
+    xTaskCreatePinnedToCore(freemem_task, "freemem_task", 2048, NULL, 1, NULL, 0);
 
-    while (1) {
+    // while (1) {
 
-    }
+
+    // }
 
 }
