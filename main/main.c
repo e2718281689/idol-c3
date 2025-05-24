@@ -54,12 +54,6 @@ static esp_lcd_panel_handle_t lcd_panel = NULL;
 /* LVGL display and touch */
 static lv_display_t *lvgl_disp = NULL;
 
-static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
-{
-    lv_fs_drv_t *disp_driver = (lv_fs_drv_t *)user_ctx;
-    lv_disp_flush_ready(disp_driver);
-    return false;
-}
 
 static esp_err_t app_lcd_init(void)
 {
@@ -86,8 +80,6 @@ static esp_err_t app_lcd_init(void)
         .lcd_param_bits = EXAMPLE_LCD_PARAM_BITS,
         .spi_mode = 0,
         .trans_queue_depth = 10,
-        // .on_color_trans_done = example_notify_lvgl_flush_ready,
-        // .user_ctx = &lvgl_disp,
     };
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)EXAMPLE_LCD_SPI_NUM, &io_config, &lcd_io), err, TAG, "New panel IO failed");
 
