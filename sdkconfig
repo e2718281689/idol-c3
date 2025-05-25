@@ -1858,6 +1858,13 @@ CONFIG_WIFI_PROV_STA_ALL_CHANNEL_SCAN=y
 # end of Wi-Fi Provisioning Manager
 
 #
+# SensorLib Configuration
+#
+CONFIG_SENSORLIB_ESP_IDF_NEW_API=y
+# CONFIG_SENSORLIB_ESP_IDF_OLD_API is not set
+# end of SensorLib Configuration
+
+#
 # ESP LVGL PORT
 #
 # end of ESP LVGL PORT

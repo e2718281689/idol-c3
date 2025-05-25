@@ -3,3 +3,4 @@ dependencies:
   joltwallet/littlefs: ~=1.14.8
   espressif/esp_lvgl_port: ^2.2.2
   lvgl/lvgl: ^9.2.2
+  cfscn/sensorlib: ^0.2.2
