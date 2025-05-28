@@ -9,9 +9,9 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lvgl_port.h"
 #include "esp_lcd_st7789v3.h"
-#include  "include/lv_port_tick.h"
-#include  "include/lv_port_disp.h"
-#include "unity.h"
+#include "include/lv_port_tick.h"
+#include "include/lv_port_disp.h"
+#include "include/lv_port_indev.h"
 
 static char *TAG = "lv_port_tick";
 
@@ -38,6 +38,8 @@ void lvgl_task(void *pvParameters)
 
     ESP_ERROR_CHECK(app_lcd_init());
     ESP_ERROR_CHECK(app_lvgl_init());
+
+    lv_indev_t* buttons_handle = lvgl_port_add_adc_buttons();
 
     while (1) {
         lv_timer_handler();
