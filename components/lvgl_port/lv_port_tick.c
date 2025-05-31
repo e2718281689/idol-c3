@@ -33,13 +33,66 @@ static void check_leak(size_t start_free, size_t end_free, const char *type)
 
 
 
+static lv_style_t style_btn;
+static lv_style_t style_button_pressed;
+static lv_style_t style_button_red;
+
+static void event_handler(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+
+    if(code == LV_EVENT_CLICKED) {
+        LV_LOG_USER("Clicked");
+    }
+    else if(code == LV_EVENT_VALUE_CHANGED) {
+        LV_LOG_USER("Toggled");
+    }
+}
+
+void lv_example_button_1(void)
+{
+    lv_obj_t * label;
+
+    // 获取当前活动屏幕对象
+    lv_obj_t *scr = lv_scr_act();
+
+    // 设置背景色为白色
+    lv_obj_set_style_bg_color(scr, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
+
+    
+    lv_obj_t * btn1 = lv_button_create(lv_screen_active());
+    lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
+    lv_obj_remove_flag(btn1, LV_OBJ_FLAG_PRESS_LOCK);
+
+    label = lv_label_create(btn1);
+    lv_label_set_text(label, "Button");
+    lv_obj_center(label);
+
+    lv_obj_t * btn2 = lv_button_create(lv_screen_active());
+    lv_obj_add_event_cb(btn2, event_handler, LV_EVENT_ALL, NULL);
+    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 40);
+    lv_obj_add_flag(btn2, LV_OBJ_FLAG_CHECKABLE);
+    lv_obj_set_height(btn2, LV_SIZE_CONTENT);
+
+    label = lv_label_create(btn2);
+    lv_label_set_text(label, "Toggle");
+    lv_obj_center(label);
+
+}
+
+
 void lvgl_task(void *pvParameters)
 {
 
+
+    
     ESP_ERROR_CHECK(app_lcd_init());
     ESP_ERROR_CHECK(app_lvgl_init());
+    ESP_ERROR_CHECK(lvgl_indev_init());
 
-    lv_indev_t* buttons_handle = lvgl_port_add_adc_buttons();
+    lv_example_button_1();
 
     while (1) {
         lv_timer_handler();

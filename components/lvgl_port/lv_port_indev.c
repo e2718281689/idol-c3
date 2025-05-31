@@ -11,9 +11,9 @@ static const char *TAG = "LVGL_ADC_BTN";
 #define ADC_UNIT        ADC_UNIT_1
 #define ADC_ATTEN       ADC_ATTEN_DB_11
 
-#define ADC_BTN_PREV_THRESH   300     // 电压阈值范围示意
-#define ADC_BTN_NEXT_THRESH   1000
-#define ADC_BTN_ENTER_THRESH  2000
+#define ADC_BTN_PREV_THRESH   3048     //RIGHT  // 电压阈值范围示意
+#define ADC_BTN_NEXT_THRESH   10 
+#define ADC_BTN_ENTER_THRESH  2280
 #define ADC_BTN_MARGIN        100
 
 typedef struct {
@@ -24,6 +24,28 @@ typedef struct {
 } lvgl_adc_btn_ctx_t;
 
 static void lvgl_adc_btn_read_cb(lv_indev_t *indev_drv, lv_indev_data_t *data);
+
+static lv_indev_t *lvgl_port_add_adc_buttons(void);
+
+esp_err_t lvgl_indev_init()
+{
+
+    esp_err_t ret = ESP_OK;
+
+    lv_indev_t* buttons_handle = lvgl_port_add_adc_buttons();
+
+    if(buttons_handle == NULL)
+    {
+        return ESP_FAIL;
+    }
+
+    lv_group_t * g = lv_group_create();
+    lv_group_set_default(g);
+    lv_indev_set_group(buttons_handle,g);
+
+    return ret;
+}
+
 
 lv_indev_t *lvgl_port_add_adc_buttons(void)
 {
@@ -51,7 +73,7 @@ lv_indev_t *lvgl_port_add_adc_buttons(void)
     lvgl_port_lock(0);
     lv_indev_t *indev = lv_indev_create();
     lv_indev_set_type(indev, LV_INDEV_TYPE_ENCODER);
-    lv_indev_set_mode(indev, LV_INDEV_MODE_EVENT);
+    // lv_indev_set_mode(indev, LV_INDEV_MODE_BUTTON);
     lv_indev_set_read_cb(indev, lvgl_adc_btn_read_cb);
     lv_indev_set_driver_data(indev, ctx);
     ctx->indev = indev;
@@ -70,22 +92,23 @@ static void lvgl_adc_btn_read_cb(lv_indev_t *indev_drv, lv_indev_data_t *data)
     int val = 0;
     adc_oneshot_read(ctx->adc_handle, ADC_BTN_CHANNEL, &val);
     
-    printf("adc btn val = %d\n", val);
-
     data->state = LV_INDEV_STATE_RELEASED;
 
     if (abs(val - ADC_BTN_PREV_THRESH) < ADC_BTN_MARGIN) {
         data->key = LV_KEY_LEFT;
         ctx->last_key = LV_KEY_LEFT;
         data->state = LV_INDEV_STATE_PRESSED;
+        // ESP_LOGI(TAG, "LV_KEY_LEFT adc value: %d", val);
     } else if (abs(val - ADC_BTN_NEXT_THRESH) < ADC_BTN_MARGIN) {
         data->key = LV_KEY_RIGHT;
         ctx->last_key = LV_KEY_RIGHT;
         data->state = LV_INDEV_STATE_PRESSED;
+        // ESP_LOGI(TAG, "LV_KEY_RIGHT adc value: %d", val);
     } else if (abs(val - ADC_BTN_ENTER_THRESH) < ADC_BTN_MARGIN) {
         data->key = LV_KEY_ENTER;
         ctx->last_key = LV_KEY_ENTER;
         data->state = LV_INDEV_STATE_PRESSED;
+        // ESP_LOGI(TAG, "LV_KEY_ENTER adc value: %d", val);
     } else {
         data->key = ctx->last_key;
     }
