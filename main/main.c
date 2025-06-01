@@ -21,6 +21,7 @@
 #include "milkytime.c"
 #include "moiw_2014.c"
 #include "lv_port_tick.h"
+#include "sht40.h"
 
 static char *TAG = "main";
 
@@ -55,12 +56,5 @@ void app_main(void)
 
 
     xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 1, NULL, 0);
-
-    // xTaskCreatePinnedToCore(freemem_task, "freemem_task", 2048, NULL, 1, NULL, 0);
-
-    // while (1) {
-
-
-    // }
 
 }
