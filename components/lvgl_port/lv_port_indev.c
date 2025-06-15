@@ -3,6 +3,7 @@
 #include "esp_check.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_lvgl_port.h"
+#include "lv_port_disp.h"
 #include "lvgl.h"
 
 static const char *TAG = "LVGL_ADC_BTN";
@@ -18,21 +19,21 @@ static const char *TAG = "LVGL_ADC_BTN";
 
 typedef struct {
     adc_oneshot_unit_handle_t adc_handle;
-    lv_indev_t *indev;
+    lv_indev_drv_t  indev_drv;  /* LVGL input device driver */
     uint32_t last_key;
     bool btn_pressed;
 } lvgl_adc_btn_ctx_t;
 
-static void lvgl_adc_btn_read_cb(lv_indev_t *indev_drv, lv_indev_data_t *data);
+static void lvgl_adc_btn_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 
-static lv_indev_t *lvgl_port_add_adc_buttons(void);
+static lv_indev_t *lvgl_port_add_adc_buttons(lv_display_t *disp);
 
 esp_err_t lvgl_indev_init()
 {
 
     esp_err_t ret = ESP_OK;
 
-    lv_indev_t* buttons_handle = lvgl_port_add_adc_buttons();
+    lv_indev_t* buttons_handle = lvgl_port_add_adc_buttons(lvgl_disp);
 
     if(buttons_handle == NULL)
     {
@@ -47,48 +48,49 @@ esp_err_t lvgl_indev_init()
 }
 
 
-lv_indev_t *lvgl_port_add_adc_buttons(void)
+lv_indev_t *lvgl_port_add_adc_buttons(lv_display_t *disp)
 {
     ESP_LOGI(TAG, "lvgl_port_add_adc_buttons");
 
+    assert(disp != NULL);
+
     esp_err_t ret;
-    lvgl_adc_btn_ctx_t *ctx = calloc(1, sizeof(lvgl_adc_btn_ctx_t));
-    ESP_GOTO_ON_FALSE(ctx, false, err, TAG, "No memory for ADC button context");
+    lvgl_adc_btn_ctx_t *buttons_ctx = calloc(1, sizeof(lvgl_adc_btn_ctx_t));
+    ESP_GOTO_ON_FALSE(buttons_ctx, false, err, TAG, "No memory for ADC button context");
 
     // 初始化 ADC
     adc_oneshot_unit_init_cfg_t init_config = {
         .unit_id = ADC_UNIT,
     };
-    ret = adc_oneshot_new_unit(&init_config, &ctx->adc_handle);
+    ret = adc_oneshot_new_unit(&init_config, &buttons_ctx->adc_handle);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "ADC unit init failed");
 
     adc_oneshot_chan_cfg_t chan_cfg = {
         .atten = ADC_ATTEN,
         .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
-    ret = adc_oneshot_config_channel(ctx->adc_handle, ADC_BTN_CHANNEL, &chan_cfg);
+    ret = adc_oneshot_config_channel(buttons_ctx->adc_handle, ADC_BTN_CHANNEL, &chan_cfg);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "ADC channel config failed");
 
-    // 注册 LVGL 输入设备
-    lvgl_port_lock(0);
-    lv_indev_t *indev = lv_indev_create();
-    lv_indev_set_type(indev, LV_INDEV_TYPE_ENCODER);
-    // lv_indev_set_mode(indev, LV_INDEV_MODE_BUTTON);
-    lv_indev_set_read_cb(indev, lvgl_adc_btn_read_cb);
-    lv_indev_set_driver_data(indev, ctx);
-    ctx->indev = indev;
-    lvgl_port_unlock();
+    lv_indev_t *indev = NULL;
+    lv_indev_drv_init(&buttons_ctx->indev_drv);
+    buttons_ctx->indev_drv.type = LV_INDEV_TYPE_ENCODER;
+    buttons_ctx->indev_drv.disp = disp;
+    buttons_ctx->indev_drv.read_cb = lvgl_adc_btn_read_cb;
+    buttons_ctx->indev_drv.user_data = buttons_ctx;
+    buttons_ctx->indev_drv.long_press_repeat_time = 300;
+    indev = lv_indev_drv_register(&buttons_ctx->indev_drv);
 
     return indev;
 
 err:
-    if (ctx) free(ctx);
+    if (buttons_ctx) free(buttons_ctx);
     return NULL;
 }
 
-static void lvgl_adc_btn_read_cb(lv_indev_t *indev_drv, lv_indev_data_t *data)
+static void lvgl_adc_btn_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 {
-    lvgl_adc_btn_ctx_t *ctx = lv_indev_get_driver_data(indev_drv);
+    lvgl_adc_btn_ctx_t *ctx = indev_drv->user_data;
     int val = 0;
     adc_oneshot_read(ctx->adc_handle, ADC_BTN_CHANNEL, &val);
     

@@ -18,8 +18,6 @@
 #include "esp_lcd_st7789v3.h"
 #include "esp_littlefs.h"
 #include "esp_task_wdt.h"
-#include "milkytime.c"
-#include "moiw_2014.c"
 #include "lv_port_tick.h"
 #include "sht40.h"
 

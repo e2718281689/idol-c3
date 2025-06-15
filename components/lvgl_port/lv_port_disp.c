@@ -40,7 +40,7 @@ static esp_lcd_panel_io_handle_t lcd_io = NULL;
 static esp_lcd_panel_handle_t lcd_panel = NULL;
 
 /* LVGL display and touch */
-static lv_display_t *lvgl_disp = NULL;
+lv_display_t *lvgl_disp = NULL;
 
 
 esp_err_t app_lcd_init(void)
@@ -159,49 +159,49 @@ esp_err_t app_lvgl_deinit(void)
 }
 
 
-// 动画回调：设置角度
-static void rotate_cb(void *img_obj, int32_t angle)
-{
-    lv_image_set_rotation(img_obj, angle);
-}
-static void app_main_display(void)
-{
-    lv_obj_t *scr = lv_scr_act();
+// // 动画回调：设置角度
+// static void rotate_cb(void *img_obj, int32_t angle)
+// {
+//     lv_image_set_rotation(img_obj, angle);
+// }
+// static void app_main_display(void)
+// {
+//     lv_obj_t *scr = lv_scr_act();
 
-    /* Task lock */
-    lvgl_port_lock(0);
+//     /* Task lock */
+//     lvgl_port_lock(0);
 
-    /* Your LVGL objects code here .... */
+//     /* Your LVGL objects code here .... */
 
-    // 设置背景颜色为黄色（RGB: 255, 255, 0）
-    lv_obj_set_style_bg_color(scr, lv_color_make(255, 255, 0), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
+//     // 设置背景颜色为黄色（RGB: 255, 255, 0）
+//     lv_obj_set_style_bg_color(scr, lv_color_make(255, 255, 0), LV_PART_MAIN);
+//     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
 
 
-    lv_obj_t* img = lv_gif_create(lv_screen_active());
-    lv_gif_set_src(img, "A:/littlefs/miho.gif");
+//     lv_obj_t* img = lv_gif_create(lv_screen_active());
+//     lv_gif_set_src(img, "A:/littlefs/miho.gif");
 
-    /*Now create the actual image*/
-    // lv_obj_t *img = lv_image_create(lv_screen_active());
-    // lv_image_set_src(img, "A:/littlefs/moiw_2014_240.bin");
-    // lv_image_set_src(img, &moiw_2014);
+//     /*Now create the actual image*/
+//     // lv_obj_t *img = lv_image_create(lv_screen_active());
+//     // lv_image_set_src(img, "A:/littlefs/moiw_2014_240.bin");
+//     // lv_image_set_src(img, &moiw_2014);
    
-    lv_obj_center(img);
+//     lv_obj_center(img);
 
-    // lv_obj_set_style_transform_pivot_x(img, LV_PCT(50), 0);
-    // lv_obj_set_style_transform_pivot_y(img, LV_PCT(50), 0);
+//     // lv_obj_set_style_transform_pivot_x(img, LV_PCT(50), 0);
+//     // lv_obj_set_style_transform_pivot_y(img, LV_PCT(50), 0);
 
-    // // 动画配置
-    // lv_anim_t a;
-    // lv_anim_init(&a);
-    // lv_anim_set_var(&a, img);
-    // lv_anim_set_exec_cb(&a, rotate_cb);  // 用 C 函数作为回调
-    // lv_anim_set_values(&a, 0, 3600);
-    // lv_anim_set_time(&a, 3000);
-    // lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
-    // lv_anim_start(&a);
+//     // // 动画配置
+//     // lv_anim_t a;
+//     // lv_anim_init(&a);
+//     // lv_anim_set_var(&a, img);
+//     // lv_anim_set_exec_cb(&a, rotate_cb);  // 用 C 函数作为回调
+//     // lv_anim_set_values(&a, 0, 3600);
+//     // lv_anim_set_time(&a, 3000);
+//     // lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+//     // lv_anim_start(&a);
 
-    // /* Task unlock */
-    lvgl_port_unlock();
-}
+//     // /* Task unlock */
+//     lvgl_port_unlock();
+// }
 
