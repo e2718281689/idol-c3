@@ -4,6 +4,8 @@
 #include "driver/i2c.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
+#include "driver/ledc.h"
+
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
@@ -17,7 +19,7 @@
 
 /* LCD settings */
 #define EXAMPLE_LCD_SPI_NUM         (SPI2_HOST)
-#define EXAMPLE_LCD_PIXEL_CLK_HZ    (40 * 1000 * 1000)
+#define EXAMPLE_LCD_PIXEL_CLK_HZ    (10 * 1000 * 1000)
 #define EXAMPLE_LCD_CMD_BITS        (8)
 #define EXAMPLE_LCD_PARAM_BITS      (8)
 #define EXAMPLE_LCD_COLOR_SPACE     (ESP_LCD_COLOR_SPACE_RGB)
@@ -28,9 +30,18 @@
 /* LCD pins */
 #define EXAMPLE_LCD_GPIO_SCLK       (GPIO_NUM_7)
 #define EXAMPLE_LCD_GPIO_MOSI       (GPIO_NUM_6)
-#define EXAMPLE_LCD_GPIO_RST        (-1)
+#define EXAMPLE_LCD_GPIO_RST        (GPIO_NUM_9)
 #define EXAMPLE_LCD_GPIO_DC         (GPIO_NUM_4)
 #define EXAMPLE_LCD_GPIO_CS         (GPIO_NUM_3)
+
+//背光
+#define EXAMPLE_LCD_GPIO_BK         (GPIO_NUM_2)
+// LEDC 配置
+#define LEDC_TIMER              LEDC_TIMER_0
+#define LEDC_MODE               LEDC_LOW_SPEED_MODE // 使用低速模式
+#define LEDC_CHANNEL            LEDC_CHANNEL_0
+#define LEDC_DUTY_RES           LEDC_TIMER_10_BIT // 分辨率，10位 (0-1023)
+#define LEDC_FREQUENCY          (5000) // PWM 频率 5 kHz
 
 
 static char *TAG = "lv_port_disp";
@@ -44,7 +55,6 @@ lv_display_t *lvgl_disp = NULL;
 
 
 esp_err_t app_lcd_init(void)
-
 {
     esp_err_t ret = ESP_OK;
 
@@ -79,6 +89,34 @@ esp_err_t app_lcd_init(void)
         .bits_per_pixel = EXAMPLE_LCD_BITS_PER_PIXEL,
     };
     ESP_GOTO_ON_ERROR(esp_lcd_new_panel_st7789v3(lcd_io, &panel_config, &lcd_panel), err, TAG, "New panel failed");
+
+
+    // 1. 配置 LEDC 定时器
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_MODE,
+        .timer_num        = LEDC_TIMER,
+        .duty_resolution  = LEDC_DUTY_RES,
+        .freq_hz          = LEDC_FREQUENCY,
+        .clk_cfg          = LEDC_AUTO_CLK
+    };
+    ledc_timer_config(&ledc_timer);
+
+    // 2. 配置 LEDC 通道
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_MODE,
+        .channel        = LEDC_CHANNEL,
+        .timer_sel      = LEDC_TIMER,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = EXAMPLE_LCD_GPIO_BK,
+        .duty           = 0, // 初始占空比为 0 (熄灭)
+        .hpoint         = 0
+    };
+    ESP_GOTO_ON_ERROR(ledc_channel_config(&ledc_channel), err, TAG, "New bk ledc failed");
+
+    // 设置占空比
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 512);
+    // 更新占空比使其生效
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 
     esp_lcd_panel_reset(lcd_panel);
     esp_lcd_panel_init(lcd_panel);

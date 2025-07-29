@@ -8,7 +8,7 @@
 
 static const char *TAG = "LVGL_ADC_BTN";
 
-#define ADC_BTN_CHANNEL ADC_CHANNEL_2
+#define ADC_BTN_CHANNEL ADC_CHANNEL_0
 #define ADC_UNIT        ADC_UNIT_1
 #define ADC_ATTEN       ADC_ATTEN_DB_11
 
