@@ -53,6 +53,6 @@ void app_main(void)
     printf("TEST ESP LVGL port\n\r");
 
 
-    xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 10, NULL, 0);
 
 }

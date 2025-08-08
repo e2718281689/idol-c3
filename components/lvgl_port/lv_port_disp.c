@@ -114,7 +114,7 @@ esp_err_t app_lcd_init(void)
     ESP_GOTO_ON_ERROR(ledc_channel_config(&ledc_channel), err, TAG, "New bk ledc failed");
 
     // 设置占空比
-    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 512);
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 1000);
     // 更新占空比使其生效
     ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 

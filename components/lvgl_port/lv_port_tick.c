@@ -72,22 +72,30 @@ static void new_theme_init_and_set(void)
  */
 void lv_example_style_14(void)
 {
-    lv_obj_t * btn;
-    lv_obj_t * label;
+    // lv_obj_t * btn;
+    // lv_obj_t * label;
 
-    btn = lv_btn_create(lv_scr_act());
-    lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, 20);
+    // btn = lv_btn_create(lv_scr_act());
+    // lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, 20);
 
-    label = lv_label_create(btn);
-    lv_label_set_text(label, "Original theme");
+    // label = lv_label_create(btn);
+    // lv_label_set_text(label, "Original theme");
 
-    new_theme_init_and_set();
+    // new_theme_init_and_set();
 
-    btn = lv_btn_create(lv_scr_act());
-    lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, 0, -20);
+    // btn = lv_btn_create(lv_scr_act());
+    // lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, 0, -20);
 
-    label = lv_label_create(btn);
-    lv_label_set_text(label, "New theme");
+    // label = lv_label_create(btn);
+    // lv_label_set_text(label, "New theme");
+
+    lv_obj_t * img;
+    img = lv_gif_create(lv_scr_act());
+    /* Assuming a File system is attached to letter 'A'
+     * E.g. set LV_USE_FS_STDIO 'A' in lv_conf.h */
+    lv_gif_set_src(img, "A:/littlefs/miho_150_bad.gif");
+    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+
 }
 
 
@@ -105,8 +113,8 @@ void lvgl_task(void *pvParameters)
     lv_example_style_14();
 
     while (1) {
-        lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(10));  // 推荐 5~20ms
+        uint32_t  time = lv_timer_handler();
+        vTaskDelay(pdMS_TO_TICKS(time));  // 推荐 5~20ms
     }
 }
 
