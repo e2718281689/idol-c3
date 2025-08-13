@@ -1,3 +1,8 @@
+#include <string.h>
+#include <sys/unistd.h>
+#include <sys/stat.h>
+#include "esp_vfs_fat.h"
+#include "sdmmc_cmd.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -30,9 +35,12 @@
 /* LCD pins */
 #define EXAMPLE_LCD_GPIO_SCLK       (GPIO_NUM_7)
 #define EXAMPLE_LCD_GPIO_MOSI       (GPIO_NUM_6)
+#define EXAMPLE_LCD_GPIO_MISO       (GPIO_NUM_8)
 #define EXAMPLE_LCD_GPIO_RST        (GPIO_NUM_9)
 #define EXAMPLE_LCD_GPIO_DC         (GPIO_NUM_4)
 #define EXAMPLE_LCD_GPIO_CS         (GPIO_NUM_3)
+
+#define EXAMPLE_TF_GPIO_CS         (GPIO_NUM_5)
 
 //背光
 #define EXAMPLE_LCD_GPIO_BK         (GPIO_NUM_2)
@@ -45,6 +53,8 @@
 
 
 static char *TAG = "lv_port_disp";
+#define MOUNT_POINT "/sdcard"
+
 
 /* LCD IO and panel */
 static esp_lcd_panel_io_handle_t lcd_io = NULL;
@@ -58,17 +68,75 @@ esp_err_t app_lcd_init(void)
 {
     esp_err_t ret = ESP_OK;
 
+
+   // Options for mounting the filesystem.
+    // If format_if_mount_failed is set to true, SD card will be partitioned and
+    // formatted in case when mounting fails.
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+#ifdef CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED
+        .format_if_mount_failed = true,
+#else
+        .format_if_mount_failed = false,
+#endif // EXAMPLE_FORMAT_IF_MOUNT_FAILED
+        .max_files = 5,
+        .allocation_unit_size = 16 * 1024
+    };
+    sdmmc_card_t *card;
+    const char mount_point[] = MOUNT_POINT;
+    ESP_LOGI(TAG, "Initializing SD card");
+
+    // Use settings defined above to initialize SD card and mount FAT filesystem.
+    // Note: esp_vfs_fat_sdmmc/sdspi_mount is all-in-one convenience functions.
+    // Please check its source code and implement error recovery when developing
+    // production applications.
+    ESP_LOGI(TAG, "Using SPI peripheral");
+
+    // By default, SD card frequency is initialized to SDMMC_FREQ_DEFAULT (20MHz)
+    // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 20MHz for SDSPI)
+    // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+
     /* LCD initialization */
     ESP_LOGD(TAG, "Initialize SPI bus");
     const spi_bus_config_t buscfg = {
         .sclk_io_num = EXAMPLE_LCD_GPIO_SCLK,
         .mosi_io_num = EXAMPLE_LCD_GPIO_MOSI,
-        .miso_io_num = GPIO_NUM_NC,
+        .miso_io_num = EXAMPLE_LCD_GPIO_MISO,
         .quadwp_io_num = GPIO_NUM_NC,
         .quadhd_io_num = GPIO_NUM_NC,
         .max_transfer_sz = EXAMPLE_LCD_H_RES * EXAMPLE_LCD_DRAW_BUFF_HEIGHT * sizeof(uint16_t),
     };
     ESP_RETURN_ON_ERROR(spi_bus_initialize(EXAMPLE_LCD_SPI_NUM, &buscfg, SPI_DMA_CH_AUTO), TAG, "SPI init failed");
+
+    // This initializes the slot without card detect (CD) and write protect (WP) signals.
+    // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
+    sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    slot_config.gpio_cs = EXAMPLE_TF_GPIO_CS;
+    slot_config.host_id = host.slot;
+
+    ESP_LOGI(TAG, "Mounting filesystem");
+    ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
+
+    if (ret != ESP_OK) {
+        if (ret == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to mount filesystem. "
+                     "If you want the card to be formatted, set the CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize the card (%s). "
+                     "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
+#ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
+            check_sd_card_pins(&config, pin_count);
+#endif
+        }
+        return -1;
+    }
+    ESP_LOGI(TAG, "Filesystem mounted");
+
+    // Card has been initialized, print its properties
+    sdmmc_card_print_info(stdout, card);
+
+
+
 
     ESP_LOGD(TAG, "Install panel IO");
     const esp_lcd_panel_io_spi_config_t io_config = {

@@ -12,9 +12,13 @@
 #include "include/lv_port_tick.h"
 #include "include/lv_port_disp.h"
 #include "include/lv_port_indev.h"
-
+#include <dirent.h>
 static char *TAG = "lv_port_tick";
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+
+SemaphoreHandle_t spi_mutex;
 
 // Some resources are lazy allocated in the LCD driver, the threadhold is left for that case
 #define TEST_MEMORY_LEAK_THRESHOLD (512)
@@ -67,6 +71,24 @@ static void new_theme_init_and_set(void)
     lv_disp_set_theme(NULL, &th_new);
 }
 
+void list_files_in_directory(const char *path) {
+    DIR *dir = opendir(path);
+    if (!dir) {
+        printf("Error opening directory: %s\n", path);
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        // readdir 会返回 "." 和 ".."，通常我们希望忽略它们
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            printf("Found file: %s\n", entry->d_name);
+        }
+    }
+
+    closedir(dir);
+}
+
 /**
  * Extending the current theme
  */
@@ -89,12 +111,19 @@ void lv_example_style_14(void)
     // label = lv_label_create(btn);
     // lv_label_set_text(label, "New theme");
 
-    lv_obj_t * img;
-    img = lv_gif_create(lv_scr_act());
-    /* Assuming a File system is attached to letter 'A'
-     * E.g. set LV_USE_FS_STDIO 'A' in lv_conf.h */
-    lv_gif_set_src(img, "A:/littlefs/miho_150_bad.gif");
-    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+    if (xSemaphoreTake(spi_mutex, portMAX_DELAY) == pdTRUE) 
+    {
+        lv_obj_t * img;
+        img = lv_gif_create(lv_scr_act());
+        /* Assuming a File system is attached to letter 'A'
+        * E.g. set LV_USE_FS_STDIO 'A' in lv_conf.h */
+        lv_gif_set_src(img, "A:/littlefs/miho_150_bad.gif");
+        lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+
+        list_files_in_directory("/littlefs");
+
+        xSemaphoreGive(spi_mutex);
+    }
 
 }
 
@@ -103,9 +132,14 @@ void lv_example_style_14(void)
 
 void lvgl_task(void *pvParameters)
 {
-
-
+    spi_mutex = xSemaphoreCreateMutex();
+    if (spi_mutex == NULL) {
+       // 错误处理：Mutex 创建失败
+        ESP_LOGE("main", "Failed to create SPI mutex");
+        return;
+    }
     
+
     ESP_ERROR_CHECK(app_lcd_init());
     ESP_ERROR_CHECK(app_lvgl_init());
     ESP_ERROR_CHECK(lvgl_indev_init());
@@ -113,8 +147,14 @@ void lvgl_task(void *pvParameters)
     lv_example_style_14();
 
     while (1) {
-        uint32_t  time = lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(time));  // 推荐 5~20ms
+
+        if (xSemaphoreTake(spi_mutex, portMAX_DELAY) == pdTRUE) 
+        {
+            uint32_t  time = lv_timer_handler();
+            vTaskDelay(pdMS_TO_TICKS(time));  // 推荐 5~20ms
+        }
+
+        xSemaphoreGive(spi_mutex);
     }
 }
 
