@@ -36,11 +36,14 @@
 #define EXAMPLE_LCD_GPIO_SCLK       (GPIO_NUM_7)
 #define EXAMPLE_LCD_GPIO_MOSI       (GPIO_NUM_6)
 #define EXAMPLE_LCD_GPIO_MISO       (GPIO_NUM_8)
-#define EXAMPLE_LCD_GPIO_RST        (GPIO_NUM_9)
+#define EXAMPLE_LCD_GPIO_RST        (-1)
 #define EXAMPLE_LCD_GPIO_DC         (GPIO_NUM_4)
 #define EXAMPLE_LCD_GPIO_CS         (GPIO_NUM_3)
 
 #define EXAMPLE_TF_GPIO_CS         (GPIO_NUM_5)
+
+#define GPIO_OUTPUT_IO    (GPIO_NUM_9)
+#define GPIO_OUTPUT_PIN_SEL  (1ULL << GPIO_OUTPUT_IO)
 
 //背光
 #define EXAMPLE_LCD_GPIO_BK         (GPIO_NUM_2)
@@ -67,6 +70,20 @@ lv_display_t *lvgl_disp = NULL;
 esp_err_t app_lcd_init(void)
 {
     esp_err_t ret = ESP_OK;
+
+
+    // 1. 配置 GPIO11 为输出模式
+    gpio_config_t io_conf = {
+        .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_conf);
+
+    // 2. 先置低电平
+    gpio_set_level(GPIO_OUTPUT_IO, 0);
 
 
    // Options for mounting the filesystem.
