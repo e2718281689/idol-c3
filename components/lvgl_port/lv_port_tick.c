@@ -111,14 +111,14 @@ void lv_example_style_14(void)
 
     // label = lv_label_create(btn);
     // lv_label_set_text(label, "New theme");
-        lv_obj_t * img;
-        img = lv_gif_create(lv_scr_act());
-        /* Assuming a File system is attached to letter 'A'
-        * E.g. set LV_USE_FS_STDIO 'A' in lv_conf.h */
-        lv_gif_set_src(img, "A:/sdcard/MIHO_150.gif");
-        lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_t * img;
+    img = lv_gif_create(lv_scr_act());
+    /* Assuming a File system is attached to letter 'A'
+    * E.g. set LV_USE_FS_STDIO 'A' in lv_conf.h */
+    lv_gif_set_src(img, "A:/sdcard/miho_150_bad.gif");
+    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
 
-        list_files_in_directory("/sdcard");
+    list_files_in_directory("/sdcard");
 
 
 }
@@ -144,8 +144,9 @@ void lvgl_task(void *pvParameters)
 
     while (1) {
 
-        uint32_t  time = lv_timer_handler();
-        vTaskDelay(pdMS_TO_TICKS(time));  // 推荐 5~20ms
+        uint32_t time = lv_timer_handler();
+        vTaskDelay(pdMS_TO_TICKS(10));  // 推荐 5~20ms
+        // ESP_LOGI(TAG, "[time:%d] ", (int)time);
     }
 }
 

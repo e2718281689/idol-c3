@@ -147,7 +147,7 @@ static void *fs_open(lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode)
         LV_LOG_WARN("fs_open: Failed to open file %s with mode %s, errno: %d", fs_path, flags, errno);
     }
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return f;
 }
@@ -167,7 +167,7 @@ static lv_fs_res_t fs_close(lv_fs_drv_t *drv, void *file_p)
     }
     LV_LOG_WARN("fs_close: Failed to close file, errno: %d", errno);
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
@@ -194,7 +194,7 @@ static lv_fs_res_t fs_read(lv_fs_drv_t *drv, void *file_p, void *buf, uint32_t b
         return LV_FS_RES_FS_ERR;
     }
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_OK;      /* EOF reached, read less than btr */
 }
@@ -209,14 +209,14 @@ static lv_fs_res_t fs_write(lv_fs_drv_t *drv, void *file_p, const void *buf, uin
     *bw = fwrite(buf, 1, btw, (FILE *)file_p);
     if (*bw == btw)
     {
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     else
     {
         LV_LOG_WARN("fs_write: Failed to write file, errno: %d", errno);
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_FS_ERR;
     }
@@ -244,20 +244,20 @@ static lv_fs_res_t fs_seek(lv_fs_drv_t *drv, void *file_p, uint32_t pos, lv_fs_w
     }
     else
     {
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_INV_PARAM;
     }
 
     if (fseek((FILE *)file_p, pos, fseek_whence) == 0)
     {
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     LV_LOG_WARN("fs_seek: Failed to seek file, errno: %d", errno);
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
@@ -272,13 +272,13 @@ static lv_fs_res_t fs_tell(lv_fs_drv_t *drv, void *file_p, uint32_t *pos_p)
     if (pos != -1)
     {
         *pos_p = (uint32_t)pos;
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     LV_LOG_WARN("fs_tell: Failed to get file position, errno: %d", errno);
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
@@ -302,7 +302,7 @@ static void *fs_dir_open(lv_fs_drv_t *drv, const char *path)
         LV_LOG_WARN("fs_dir_open: Failed to open directory %s, errno: %d", fs_path, errno);
     }
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return dir;
 }
@@ -337,7 +337,7 @@ static lv_fs_res_t fs_dir_read(lv_fs_drv_t *drv, void *rddir_p, char *fn)
         strcpy(fn, entry->d_name);
     }
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_OK;
 }
@@ -357,7 +357,7 @@ static lv_fs_res_t fs_dir_close(lv_fs_drv_t *drv, void *rddir_p)
     }
     LV_LOG_WARN("fs_dir_close: Failed to close directory, errno: %d", errno);
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
@@ -380,7 +380,7 @@ static lv_fs_res_t fs_remove(lv_fs_drv_t *drv, const char *path)
     }
     LV_LOG_WARN("fs_remove: Failed to remove file %s, errno: %d", fs_path, errno);
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
@@ -409,7 +409,7 @@ static lv_fs_res_t fs_rename(lv_fs_drv_t *drv, const char *oldname, const char *
     }
     LV_LOG_WARN("fs_rename: Failed to rename file from %s to %s, errno: %d", fs_oldname, fs_newname, errno);
 
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
     xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }

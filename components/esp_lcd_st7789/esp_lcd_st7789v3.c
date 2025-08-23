@@ -162,7 +162,7 @@ static esp_err_t panel_st7789v3_reset(esp_lcd_panel_t *panel)
     {                                            // perform software reset
         xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
         esp_lcd_panel_io_tx_param(io, LCD_CMD_SWRESET, NULL, 0);
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        
         xSemaphoreGive(fs_mutex);      // 解锁
         vTaskDelay(pdMS_TO_TICKS(20)); // spec, wait at least 5ms before sending new command
     }
@@ -227,7 +227,7 @@ static esp_err_t panel_st7789v3_init(esp_lcd_panel_t *panel)
     // LCD goes into sleep mode and display will be turned off after power on reset, exit sleep mode first
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
     esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT, NULL, 0);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
     vTaskDelay(pdMS_TO_TICKS(120));
 
@@ -237,7 +237,7 @@ static esp_err_t panel_st7789v3_init(esp_lcd_panel_t *panel)
                                                       st7789v3->colmod_cal,
                                                   },
                               1);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
 
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
@@ -246,7 +246,7 @@ static esp_err_t panel_st7789v3_init(esp_lcd_panel_t *panel)
                                                       st7789v3->madctl_val,
                                                   },
                               1);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
 
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
@@ -257,7 +257,7 @@ static esp_err_t panel_st7789v3_init(esp_lcd_panel_t *panel)
         esp_lcd_panel_io_tx_param(io, vendor_specific_init[cmd].cmd, vendor_specific_init[cmd].data, vendor_specific_init[cmd].data_bytes & 0x1F);
         cmd++;
     }
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
     // Set display window
     uint8_t col_data[4] = {
@@ -271,7 +271,7 @@ static esp_err_t panel_st7789v3_init(esp_lcd_panel_t *panel)
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
     esp_lcd_panel_io_tx_param(io, LCD_CMD_CASET, col_data, 4);
     esp_lcd_panel_io_tx_param(io, LCD_CMD_RASET, row_data, 4);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
 
     return ESP_OK;
@@ -304,14 +304,14 @@ static esp_err_t panel_st7789v3_draw_bitmap(esp_lcd_panel_t *panel, int x_start,
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
     esp_lcd_panel_io_tx_param(io, LCD_CMD_CASET, col_data, 4);
     esp_lcd_panel_io_tx_param(io, LCD_CMD_RASET, row_data, 4);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
 
     // transfer frame buffer
     size_t len = (x_end - x_start) * (y_end - y_start) * st7789v3->fb_bits_per_pixel / 8;
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
     esp_lcd_panel_io_tx_color(io, LCD_CMD_RAMWR, color_data, len);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
 
     return ESP_OK;
@@ -334,7 +334,7 @@ static esp_err_t panel_st7789v3_invert_color(esp_lcd_panel_t *panel, bool invert
 
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
     esp_lcd_panel_io_tx_param(io, command, NULL, 0);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
     return ESP_OK;
 }
@@ -362,7 +362,7 @@ static esp_err_t panel_st7789v3_mirror(esp_lcd_panel_t *panel, bool mirror_x, bo
     }
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
     esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]){st7789v3->madctl_val}, 1);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
     return ESP_OK;
 }
@@ -382,7 +382,7 @@ static esp_err_t panel_st7789v3_swap_xy(esp_lcd_panel_t *panel, bool swap_axes)
     }
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
     esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]){st7789v3->madctl_val}, 1);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
     return ESP_OK;
 }
@@ -418,7 +418,7 @@ static esp_err_t panel_st7789v3_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
     }
     xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
     esp_lcd_panel_io_tx_param(io, command, NULL, 0);
-    ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+    
     xSemaphoreGive(fs_mutex); // 解锁
     return ESP_OK;
 }
