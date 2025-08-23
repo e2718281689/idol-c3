@@ -4,13 +4,17 @@
  */
 
 /*Copy this file as "lv_port_fs.c" and set this value to "1" to enable content*/
-#if 0
+#if 1
 
 /*********************
  *      INCLUDES
  *********************/
-#include "lv_port_fs_template.h"
-#include "../../lvgl.h"
+// #include "lv_port_fs_template.h"
+#include "lvgl.h"
+#include <stdio.h>   // For standard file I/O (fopen, fclose, fread, fwrite, fseek, ftell)
+#include <string.h>  // For string manipulation (e.g., strcpy, strlen)
+#include <dirent.h>  // For directory operations (opendir, readdir, closedir)
+#include <errno.h>   // For error handling (errno)
 
 /*********************
  *      DEFINES
@@ -30,9 +34,9 @@ static lv_fs_res_t fs_close(lv_fs_drv_t * drv, void * file_p);
 static lv_fs_res_t fs_read(lv_fs_drv_t * drv, void * file_p, void * buf, uint32_t btr, uint32_t * br);
 static lv_fs_res_t fs_write(lv_fs_drv_t * drv, void * file_p, const void * buf, uint32_t btw, uint32_t * bw);
 static lv_fs_res_t fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs_whence_t whence);
-static lv_fs_res_t fs_size(lv_fs_drv_t * drv, void * file_p, uint32_t * size_p);
 static lv_fs_res_t fs_tell(lv_fs_drv_t * drv, void * file_p, uint32_t * pos_p);
-
+static lv_fs_res_t fs_remove(lv_fs_drv_t * drv, const char * path);
+static lv_fs_res_t fs_rename(lv_fs_drv_t * drv, const char * oldname, const char * newname);
 static void * fs_dir_open(lv_fs_drv_t * drv, const char * path);
 static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn);
 static lv_fs_res_t fs_dir_close(lv_fs_drv_t * drv, void * rddir_p);
@@ -69,13 +73,15 @@ void lv_port_fs_init(void)
     lv_fs_drv_init(&fs_drv);
 
     /*Set up fields...*/
-    fs_drv.letter = 'P';
+    fs_drv.letter = 'A';
     fs_drv.open_cb = fs_open;
     fs_drv.close_cb = fs_close;
     fs_drv.read_cb = fs_read;
     fs_drv.write_cb = fs_write;
     fs_drv.seek_cb = fs_seek;
     fs_drv.tell_cb = fs_tell;
+    // fs_drv.remove_cb = fs_remove;
+    // fs_drv.rename_cb = fs_rename;
 
     fs_drv.dir_close_cb = fs_dir_close;
     fs_drv.dir_open_cb = fs_dir_open;
@@ -91,9 +97,7 @@ void lv_port_fs_init(void)
 /*Initialize your Storage device and File system.*/
 static void fs_init(void)
 {
-    /*E.g. for FatFS initialize the SD card and FatFS itself*/
-
-    /*You code here*/
+    /* Nothing to do for standard C file I/O */
 }
 
 /**
@@ -105,23 +109,31 @@ static void fs_init(void)
  */
 static void * fs_open(lv_fs_drv_t * drv, const char * path, lv_fs_mode_t mode)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
-
-    void * f = NULL;
-
-    if(mode == LV_FS_MODE_WR) {
-        /*Open a file for write*/
-        f = ...         /*Add your code here*/
-    }
-    else if(mode == LV_FS_MODE_RD) {
-        /*Open a file for read*/
-        f = ...         /*Add your code here*/
-    }
-    else if(mode == (LV_FS_MODE_WR | LV_FS_MODE_RD)) {
-        /*Open a file for read and write*/
-        f = ...         /*Add your code here*/
+    const char * fs_path = path;
+    if (fs_path[0] == drv->letter && fs_path[1] == ':') {
+        fs_path += 2; /* Skip the drive letter and colon */
     }
 
+    const char * flags = "";
+    if (mode == LV_FS_MODE_WR) {
+        flags = "wb";
+    } else if (mode == LV_FS_MODE_RD) {
+        flags = "rb";
+    } else if (mode == (LV_FS_MODE_WR | LV_FS_MODE_RD)) {
+        flags = "r+b"; /* Open for read/write, create if not exists, don't truncate */
+        /* If file doesn't exist, create it with "wb+" */
+        FILE * temp_f = fopen(fs_path, "rb");
+        if (temp_f == NULL) {
+            flags = "wb+";
+        } else {
+            fclose(temp_f);
+        }
+    }
+
+    FILE * f = fopen(fs_path, flags);
+    if (f == NULL) {
+        LV_LOG_WARN("fs_open: Failed to open file %s with mode %s, errno: %d", fs_path, flags, errno);
+    }
     return f;
 }
 
@@ -133,11 +145,11 @@ static void * fs_open(lv_fs_drv_t * drv, const char * path, lv_fs_mode_t mode)
  */
 static lv_fs_res_t fs_close(lv_fs_drv_t * drv, void * file_p)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
-
-    /*Add your code here*/
-
-    return res;
+    if (fclose((FILE *)file_p) == 0) {
+        return LV_FS_RES_OK;
+    }
+    LV_LOG_WARN("fs_close: Failed to close file, errno: %d", errno);
+    return LV_FS_RES_FS_ERR;
 }
 
 /**
@@ -151,11 +163,14 @@ static lv_fs_res_t fs_close(lv_fs_drv_t * drv, void * file_p)
  */
 static lv_fs_res_t fs_read(lv_fs_drv_t * drv, void * file_p, void * buf, uint32_t btr, uint32_t * br)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
-
-    /*Add your code here*/
-
-    return res;
+    *br = fread(buf, 1, btr, (FILE *)file_p);
+    if (*br == btr) {
+        return LV_FS_RES_OK;
+    } else if (ferror((FILE *)file_p)) {
+        LV_LOG_WARN("fs_read: Failed to read file, errno: %d", errno);
+        return LV_FS_RES_FS_ERR;
+    }
+    return LV_FS_RES_OK; /* EOF reached, read less than btr */
 }
 
 /**
@@ -169,11 +184,13 @@ static lv_fs_res_t fs_read(lv_fs_drv_t * drv, void * file_p, void * buf, uint32_
  */
 static lv_fs_res_t fs_write(lv_fs_drv_t * drv, void * file_p, const void * buf, uint32_t btw, uint32_t * bw)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
-
-    /*Add your code here*/
-
-    return res;
+    *bw = fwrite(buf, 1, btw, (FILE *)file_p);
+    if (*bw == btw) {
+        return LV_FS_RES_OK;
+    } else {
+        LV_LOG_WARN("fs_write: Failed to write file, errno: %d", errno);
+        return LV_FS_RES_FS_ERR;
+    }
 }
 
 /**
@@ -186,11 +203,22 @@ static lv_fs_res_t fs_write(lv_fs_drv_t * drv, void * file_p, const void * buf, 
  */
 static lv_fs_res_t fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs_whence_t whence)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
+    int fseek_whence;
+    if (whence == LV_FS_SEEK_SET) {
+        fseek_whence = SEEK_SET;
+    } else if (whence == LV_FS_SEEK_CUR) {
+        fseek_whence = SEEK_CUR;
+    } else if (whence == LV_FS_SEEK_END) {
+        fseek_whence = SEEK_END;
+    } else {
+        return LV_FS_RES_INV_PARAM;
+    }
 
-    /*Add your code here*/
-
-    return res;
+    if (fseek((FILE *)file_p, pos, fseek_whence) == 0) {
+        return LV_FS_RES_OK;
+    }
+    LV_LOG_WARN("fs_seek: Failed to seek file, errno: %d", errno);
+    return LV_FS_RES_FS_ERR;
 }
 /**
  * Give the position of the read write pointer
@@ -201,11 +229,13 @@ static lv_fs_res_t fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs
  */
 static lv_fs_res_t fs_tell(lv_fs_drv_t * drv, void * file_p, uint32_t * pos_p)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
-
-    /*Add your code here*/
-
-    return res;
+    long int pos = ftell((FILE *)file_p);
+    if (pos != -1) {
+        *pos_p = (uint32_t)pos;
+        return LV_FS_RES_OK;
+    }
+    LV_LOG_WARN("fs_tell: Failed to get file position, errno: %d", errno);
+    return LV_FS_RES_FS_ERR;
 }
 
 /**
@@ -216,10 +246,16 @@ static lv_fs_res_t fs_tell(lv_fs_drv_t * drv, void * file_p, uint32_t * pos_p)
  */
 static void * fs_dir_open(lv_fs_drv_t * drv, const char * path)
 {
-    void * dir = NULL;
-    /*Add your code here*/
-    dir = ...           /*Add your code here*/
-          return dir;
+    const char * fs_path = path;
+    if (fs_path[0] == drv->letter && fs_path[1] == ':') {
+        fs_path += 2; /* Skip the drive letter and colon */
+    }
+
+    DIR * dir = opendir(fs_path);
+    if (dir == NULL) {
+        LV_LOG_WARN("fs_dir_open: Failed to open directory %s, errno: %d", fs_path, errno);
+    }
+    return dir;
 }
 
 /**
@@ -232,11 +268,22 @@ static void * fs_dir_open(lv_fs_drv_t * drv, const char * path)
  */
 static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
+    struct dirent * entry;
+    do {
+        entry = readdir((DIR *)rddir_p);
+        if (entry == NULL) {
+            fn[0] = '\0'; /* No more entries */
+            return LV_FS_RES_OK;
+        }
+    } while (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0);
 
-    /*Add your code here*/
-
-    return res;
+    if (entry->d_type == DT_DIR) {
+        fn[0] = '/';
+        strcpy(&fn[1], entry->d_name);
+    } else {
+        strcpy(fn, entry->d_name);
+    }
+    return LV_FS_RES_OK;
 }
 
 /**
@@ -247,11 +294,44 @@ static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn)
  */
 static lv_fs_res_t fs_dir_close(lv_fs_drv_t * drv, void * rddir_p)
 {
-    lv_fs_res_t res = LV_FS_RES_NOT_IMP;
+    if (closedir((DIR *)rddir_p) == 0) {
+        return LV_FS_RES_OK;
+    }
+    LV_LOG_WARN("fs_dir_close: Failed to close directory, errno: %d", errno);
+    return LV_FS_RES_FS_ERR;
+}
 
-    /*Add your code here*/
+static lv_fs_res_t fs_remove(lv_fs_drv_t * drv, const char * path)
+{
+    const char * fs_path = path;
+    if (fs_path[0] == drv->letter && fs_path[1] == ':') {
+        fs_path += 2; /* Skip the drive letter and colon */
+    }
 
-    return res;
+    if (remove(fs_path) == 0) {
+        return LV_FS_RES_OK;
+    }
+    LV_LOG_WARN("fs_remove: Failed to remove file %s, errno: %d", fs_path, errno);
+    return LV_FS_RES_FS_ERR;
+}
+
+static lv_fs_res_t fs_rename(lv_fs_drv_t * drv, const char * oldname, const char * newname)
+{
+    const char * fs_oldname = oldname;
+    if (fs_oldname[0] == drv->letter && fs_oldname[1] == ':') {
+        fs_oldname += 2; /* Skip the drive letter and colon */
+    }
+
+    const char * fs_newname = newname;
+    if (fs_newname[0] == drv->letter && fs_newname[1] == ':') {
+        fs_newname += 2; /* Skip the drive letter and colon */
+    }
+
+    if (rename(fs_oldname, fs_newname) == 0) {
+        return LV_FS_RES_OK;
+    }
+    LV_LOG_WARN("fs_rename: Failed to rename file from %s to %s, errno: %d", fs_oldname, fs_newname, errno);
+    return LV_FS_RES_FS_ERR;
 }
 
 #else /*Enable this file at the top*/

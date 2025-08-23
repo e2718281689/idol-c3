@@ -12,6 +12,7 @@
 #include "include/lv_port_tick.h"
 #include "include/lv_port_disp.h"
 #include "include/lv_port_indev.h"
+#include "include/lv_port_fs.h"
 #include <dirent.h>
 static char *TAG = "lv_port_tick";
 
@@ -143,7 +144,7 @@ void lvgl_task(void *pvParameters)
     ESP_ERROR_CHECK(app_lcd_init());
     ESP_ERROR_CHECK(app_lvgl_init());
     ESP_ERROR_CHECK(lvgl_indev_init());
-
+    lv_port_fs_init();  
     lv_example_style_14();
 
     while (1) {
