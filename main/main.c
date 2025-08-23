@@ -23,8 +23,13 @@
 
 static char *TAG = "main";
 
+SemaphoreHandle_t fs_mutex;
+
 void app_main(void)
 {
+
+
+    fs_mutex = xSemaphoreCreateMutex();
 
     ESP_LOGI(TAG, "Initializing LittleFS");
 

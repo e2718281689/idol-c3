@@ -7,7 +7,7 @@
 #if 1
 
 /*********************
- *      INCLUDES
+ * INCLUDES
  *********************/
 // #include "lv_port_fs_template.h"
 #include "lvgl.h"
@@ -15,17 +15,19 @@
 #include <string.h>  // For string manipulation (e.g., strcpy, strlen)
 #include <dirent.h>  // For directory operations (opendir, readdir, closedir)
 #include <errno.h>   // For error handling (errno)
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 /*********************
- *      DEFINES
+ * DEFINES
  *********************/
 
 /**********************
- *      TYPEDEFS
+ * TYPEDEFS
  **********************/
 
 /**********************
- *  STATIC PROTOTYPES
+ * STATIC PROTOTYPES
  **********************/
 static void fs_init(void);
 
@@ -42,19 +44,21 @@ static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn);
 static lv_fs_res_t fs_dir_close(lv_fs_drv_t * drv, void * rddir_p);
 
 /**********************
- *  STATIC VARIABLES
+ * STATIC VARIABLES
  **********************/
+// 文件系统操作的互斥锁
+extern SemaphoreHandle_t fs_mutex;
 
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
 
 /**********************
- *      MACROS
+ * MACROS
  **********************/
 
 /**********************
- *   GLOBAL FUNCTIONS
+ * GLOBAL FUNCTIONS
  **********************/
 
 void lv_port_fs_init(void)
@@ -91,24 +95,23 @@ void lv_port_fs_init(void)
 }
 
 /**********************
- *   STATIC FUNCTIONS
+ * STATIC FUNCTIONS
  **********************/
 
 /*Initialize your Storage device and File system.*/
 static void fs_init(void)
 {
-    /* Nothing to do for standard C file I/O */
+    // 创建一个互斥锁来保护文件系统操作
+    
 }
 
 /**
  * Open a file
- * @param drv       pointer to a driver where this function belongs
- * @param path      path to the file beginning with the driver letter (e.g. S:/folder/file.txt)
- * @param mode      read: FS_MODE_RD, write: FS_MODE_WR, both: FS_MODE_RD | FS_MODE_WR
- * @return          a file descriptor or NULL on error
  */
 static void * fs_open(lv_fs_drv_t * drv, const char * path, lv_fs_mode_t mode)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
     const char * fs_path = path;
     if (fs_path[0] == drv->letter && fs_path[1] == ':') {
         fs_path += 2; /* Skip the drive letter and colon */
@@ -134,75 +137,74 @@ static void * fs_open(lv_fs_drv_t * drv, const char * path, lv_fs_mode_t mode)
     if (f == NULL) {
         LV_LOG_WARN("fs_open: Failed to open file %s with mode %s, errno: %d", fs_path, flags, errno);
     }
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return f;
 }
 
 /**
  * Close an opened file
- * @param drv       pointer to a driver where this function belongs
- * @param file_p    pointer to a file_t variable. (opened with fs_open)
- * @return          LV_FS_RES_OK: no error or  any error from @lv_fs_res_t enum
  */
 static lv_fs_res_t fs_close(lv_fs_drv_t * drv, void * file_p)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     if (fclose((FILE *)file_p) == 0) {
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     LV_LOG_WARN("fs_close: Failed to close file, errno: %d", errno);
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
 
 /**
  * Read data from an opened file
- * @param drv       pointer to a driver where this function belongs
- * @param file_p    pointer to a file_t variable.
- * @param buf       pointer to a memory block where to store the read data
- * @param btr       number of Bytes To Read
- * @param br        the real number of read bytes (Byte Read)
- * @return          LV_FS_RES_OK: no error or  any error from @lv_fs_res_t enum
  */
 static lv_fs_res_t fs_read(lv_fs_drv_t * drv, void * file_p, void * buf, uint32_t btr, uint32_t * br)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     *br = fread(buf, 1, btr, (FILE *)file_p);
     if (*br == btr) {
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     } else if (ferror((FILE *)file_p)) {
         LV_LOG_WARN("fs_read: Failed to read file, errno: %d", errno);
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_FS_ERR;
     }
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_OK; /* EOF reached, read less than btr */
 }
 
 /**
  * Write into a file
- * @param drv       pointer to a driver where this function belongs
- * @param file_p    pointer to a file_t variable
- * @param buf       pointer to a buffer with the bytes to write
- * @param btw       Bytes To Write
- * @param bw        the number of real written bytes (Bytes Written). NULL if unused.
- * @return          LV_FS_RES_OK: no error or  any error from @lv_fs_res_t enum
  */
 static lv_fs_res_t fs_write(lv_fs_drv_t * drv, void * file_p, const void * buf, uint32_t btw, uint32_t * bw)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     *bw = fwrite(buf, 1, btw, (FILE *)file_p);
     if (*bw == btw) {
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     } else {
         LV_LOG_WARN("fs_write: Failed to write file, errno: %d", errno);
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_FS_ERR;
     }
 }
 
 /**
  * Set the read write pointer. Also expand the file size if necessary.
- * @param drv       pointer to a driver where this function belongs
- * @param file_p    pointer to a file_t variable. (opened with fs_open )
- * @param pos       the new position of read write pointer
- * @param whence    tells from where to interpret the `pos`. See @lv_fs_whence_t
- * @return          LV_FS_RES_OK: no error or  any error from @lv_fs_res_t enum
  */
 static lv_fs_res_t fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs_whence_t whence)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     int fseek_whence;
     if (whence == LV_FS_SEEK_SET) {
         fseek_whence = SEEK_SET;
@@ -211,41 +213,45 @@ static lv_fs_res_t fs_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs
     } else if (whence == LV_FS_SEEK_END) {
         fseek_whence = SEEK_END;
     } else {
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_INV_PARAM;
     }
 
     if (fseek((FILE *)file_p, pos, fseek_whence) == 0) {
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     LV_LOG_WARN("fs_seek: Failed to seek file, errno: %d", errno);
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
 /**
  * Give the position of the read write pointer
- * @param drv       pointer to a driver where this function belongs
- * @param file_p    pointer to a file_t variable.
- * @param pos_p     pointer to to store the result
- * @return          LV_FS_RES_OK: no error or  any error from @lv_fs_res_t enum
  */
 static lv_fs_res_t fs_tell(lv_fs_drv_t * drv, void * file_p, uint32_t * pos_p)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     long int pos = ftell((FILE *)file_p);
     if (pos != -1) {
         *pos_p = (uint32_t)pos;
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     LV_LOG_WARN("fs_tell: Failed to get file position, errno: %d", errno);
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
 
 /**
  * Initialize a 'lv_fs_dir_t' variable for directory reading
- * @param drv       pointer to a driver where this function belongs
- * @param path      path to a directory
- * @return          pointer to the directory read descriptor or NULL on error
  */
 static void * fs_dir_open(lv_fs_drv_t * drv, const char * path)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     const char * fs_path = path;
     if (fs_path[0] == drv->letter && fs_path[1] == ':') {
         fs_path += 2; /* Skip the drive letter and colon */
@@ -255,24 +261,24 @@ static void * fs_dir_open(lv_fs_drv_t * drv, const char * path)
     if (dir == NULL) {
         LV_LOG_WARN("fs_dir_open: Failed to open directory %s, errno: %d", fs_path, errno);
     }
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return dir;
 }
 
 /**
  * Read the next filename form a directory.
- * The name of the directories will begin with '/'
- * @param drv       pointer to a driver where this function belongs
- * @param rddir_p   pointer to an initialized 'lv_fs_dir_t' variable
- * @param fn        pointer to a buffer to store the filename
- * @return          LV_FS_RES_OK: no error or  any error from @lv_fs_res_t enum
  */
 static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     struct dirent * entry;
     do {
         entry = readdir((DIR *)rddir_p);
         if (entry == NULL) {
             fn[0] = '\0'; /* No more entries */
+            xSemaphoreGive(fs_mutex); // 解锁
             return LV_FS_RES_OK;
         }
     } while (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0);
@@ -283,40 +289,51 @@ static lv_fs_res_t fs_dir_read(lv_fs_drv_t * drv, void * rddir_p, char * fn)
     } else {
         strcpy(fn, entry->d_name);
     }
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_OK;
 }
 
 /**
  * Close the directory reading
- * @param drv       pointer to a driver where this function belongs
- * @param rddir_p   pointer to an initialized 'lv_fs_dir_t' variable
- * @return          LV_FS_RES_OK: no error or  any error from @lv_fs_res_t enum
  */
 static lv_fs_res_t fs_dir_close(lv_fs_drv_t * drv, void * rddir_p)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     if (closedir((DIR *)rddir_p) == 0) {
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     LV_LOG_WARN("fs_dir_close: Failed to close directory, errno: %d", errno);
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
 
 static lv_fs_res_t fs_remove(lv_fs_drv_t * drv, const char * path)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     const char * fs_path = path;
     if (fs_path[0] == drv->letter && fs_path[1] == ':') {
         fs_path += 2; /* Skip the drive letter and colon */
     }
 
     if (remove(fs_path) == 0) {
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     LV_LOG_WARN("fs_remove: Failed to remove file %s, errno: %d", fs_path, errno);
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
 
 static lv_fs_res_t fs_rename(lv_fs_drv_t * drv, const char * oldname, const char * newname)
 {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+    
     const char * fs_oldname = oldname;
     if (fs_oldname[0] == drv->letter && fs_oldname[1] == ':') {
         fs_oldname += 2; /* Skip the drive letter and colon */
@@ -328,9 +345,12 @@ static lv_fs_res_t fs_rename(lv_fs_drv_t * drv, const char * oldname, const char
     }
 
     if (rename(fs_oldname, fs_newname) == 0) {
+        xSemaphoreGive(fs_mutex); // 解锁
         return LV_FS_RES_OK;
     }
     LV_LOG_WARN("fs_rename: Failed to rename file from %s to %s, errno: %d", fs_oldname, fs_newname, errno);
+    
+    xSemaphoreGive(fs_mutex); // 解锁
     return LV_FS_RES_FS_ERR;
 }
 

@@ -17,7 +17,9 @@
  #include "esp_log.h"
  #include "esp_check.h"
  #include "esp_lcd_st7789v3.h"
- 
+    
+extern SemaphoreHandle_t fs_mutex;
+
  static const char *TAG = "st7789v3";
  
  static esp_err_t panel_st7789v3_del(esp_lcd_panel_t *panel);
@@ -46,6 +48,9 @@
  
  esp_err_t esp_lcd_new_panel_st7789v3(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel)
  {
+
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      esp_err_t ret = ESP_OK;
      st7789v3_panel_t *st7789v3 = NULL;
      ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
@@ -109,6 +114,7 @@
      *ret_panel = &(st7789v3->base);
      ESP_LOGD(TAG, "new st7789v3 panel @%p", st7789v3);
  
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  
  err:
@@ -118,6 +124,7 @@
          }
          free(st7789v3);
      }
+     xSemaphoreGive(fs_mutex); // 解锁
      return ret;
  }
  
@@ -130,11 +137,16 @@
      }
      ESP_LOGD(TAG, "del st7789v3 panel @%p", st7789v3);
      free(st7789v3);
+
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  }
  
  static esp_err_t panel_st7789v3_reset(esp_lcd_panel_t *panel)
  {
+
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      st7789v3_panel_t *st7789v3 = __containerof(panel, st7789v3_panel_t, base);
      esp_lcd_panel_io_handle_t io = st7789v3->io;
  
@@ -149,6 +161,7 @@
          vTaskDelay(pdMS_TO_TICKS(20)); // spec, wait at least 5ms before sending new command
      }
  
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  }
  
@@ -201,6 +214,9 @@
  
  static esp_err_t panel_st7789v3_init(esp_lcd_panel_t *panel)
  {
+
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      st7789v3_panel_t *st7789v3 = __containerof(panel, st7789v3_panel_t, base);
      esp_lcd_panel_io_handle_t io = st7789v3->io;
  
@@ -240,11 +256,15 @@
      esp_lcd_panel_io_tx_param(io, LCD_CMD_CASET, col_data, 4);
      esp_lcd_panel_io_tx_param(io, LCD_CMD_RASET, row_data, 4);
  
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  }
  
  static esp_err_t panel_st7789v3_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
  {
+
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      st7789v3_panel_t *st7789v3 = __containerof(panel, st7789v3_panel_t, base);
      assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
      esp_lcd_panel_io_handle_t io = st7789v3->io;
@@ -275,11 +295,14 @@
      size_t len = (x_end - x_start) * (y_end - y_start) * st7789v3->fb_bits_per_pixel / 8;
      esp_lcd_panel_io_tx_color(io, LCD_CMD_RAMWR, color_data, len);
  
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  }
  
  static esp_err_t panel_st7789v3_invert_color(esp_lcd_panel_t *panel, bool invert_color_data)
  {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      st7789v3_panel_t *st7789v3 = __containerof(panel, st7789v3_panel_t, base);
      esp_lcd_panel_io_handle_t io = st7789v3->io;
      int command = 0;
@@ -294,6 +317,9 @@
  
  static esp_err_t panel_st7789v3_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y)
  {
+
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      st7789v3_panel_t *st7789v3 = __containerof(panel, st7789v3_panel_t, base);
      esp_lcd_panel_io_handle_t io = st7789v3->io;
      if (mirror_x) {
@@ -309,11 +335,15 @@
      esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
          st7789v3->madctl_val
      }, 1);
+
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  }
  
  static esp_err_t panel_st7789v3_swap_xy(esp_lcd_panel_t *panel, bool swap_axes)
  {
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      st7789v3_panel_t *st7789v3 = __containerof(panel, st7789v3_panel_t, base);
      esp_lcd_panel_io_handle_t io = st7789v3->io;
      if (swap_axes) {
@@ -324,19 +354,29 @@
      esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
          st7789v3->madctl_val
      }, 1);
+
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  }
  
  static esp_err_t panel_st7789v3_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap)
  {
+
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      st7789v3_panel_t *st7789v3 = __containerof(panel, st7789v3_panel_t, base);
      st7789v3->x_gap = x_gap;
      st7789v3->y_gap = y_gap;
+
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  }
  
  static esp_err_t panel_st7789v3_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
  {
+
+    xSemaphoreTake(fs_mutex, portMAX_DELAY); // 加锁
+
      st7789v3_panel_t *st7789v3 = __containerof(panel, st7789v3_panel_t, base);
      esp_lcd_panel_io_handle_t io = st7789v3->io;
      int command = 0;
@@ -351,5 +391,7 @@
          command = LCD_CMD_DISPOFF;
      }
      esp_lcd_panel_io_tx_param(io, command, NULL, 0);
+
+     xSemaphoreGive(fs_mutex); // 解锁
      return ESP_OK;
  }
