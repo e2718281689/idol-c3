@@ -19,8 +19,6 @@ static char *TAG = "lv_port_tick";
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-SemaphoreHandle_t spi_mutex;
-
 // Some resources are lazy allocated in the LCD driver, the threadhold is left for that case
 #define TEST_MEMORY_LEAK_THRESHOLD (512)
 
@@ -128,14 +126,6 @@ void lv_example_style_14(void)
 
 void lvgl_task(void *pvParameters)
 {
-    spi_mutex = xSemaphoreCreateMutex();
-    if (spi_mutex == NULL) {
-       // 错误处理：Mutex 创建失败
-        ESP_LOGE("main", "Failed to create SPI mutex");
-        return;
-    }
-    
-
     ESP_ERROR_CHECK(app_lcd_init());
     ESP_ERROR_CHECK(app_lvgl_init());
     ESP_ERROR_CHECK(lvgl_indev_init());
