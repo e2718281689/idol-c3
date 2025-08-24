@@ -8,11 +8,12 @@
 void wifi_prov_task(void *pv)
 {
     char url[150]={0};
-    if(!wifi_bt_net_init())
+    wifi_bt_net_init();
+    if(1)
     {
        wifi_view_update_status("wifi bt net");
        wifi_bt_net_run(url);
-    //    wifi_view_show_qrcode(url);
+       wifi_view_show_qrcode(url);
     }
     else
     {

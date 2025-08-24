@@ -31,7 +31,6 @@
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
 #include <wifi_provisioning/scheme_softap.h>
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
-#include "qrcode.h"
 
 
 
@@ -273,11 +272,11 @@ static void wifi_prov_print_qr(const char *name, const char *username, const cha
                     ",\"transport\":\"%s\"}",
                     PROV_QR_VERSION, name, transport);
     }
-#ifdef CONFIG_EXAMPLE_PROV_SHOW_QR
-    ESP_LOGI(TAG, "Scan this QR code from the provisioning application for Provisioning.");
-    esp_qrcode_config_t cfg = ESP_QRCODE_CONFIG_DEFAULT();
-    esp_qrcode_generate(&cfg, payload);
-#endif /* CONFIG_APP_WIFI_PROV_SHOW_QR */
+// #ifdef 0
+//     ESP_LOGI(TAG, "Scan this QR code from the provisioning application for Provisioning.");
+//     esp_qrcode_config_t cfg = ESP_QRCODE_CONFIG_DEFAULT();
+//     esp_qrcode_generate(&cfg, payload);
+// #endif /* CONFIG_APP_WIFI_PROV_SHOW_QR */
     ESP_LOGI(TAG, "If QR code is not visible, copy paste the below URL in a browser.\n%s?data=%s", QRCODE_BASE_URL, payload);
 
     memcpy(url, payload, strlen(payload));

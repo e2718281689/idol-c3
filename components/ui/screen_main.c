@@ -1,6 +1,6 @@
 #include "lvgl.h"
 #include "controller.h"
-// #include "src/libs/qrcode/lv_qrcode.h"
+// #include "lv_qrcode.h"
 
 static lv_obj_t * main_scr;   // 主界面对象
 static lv_obj_t * task_scr;   // 任务界面对象
@@ -14,9 +14,9 @@ void wifi_view_load_main()
 
 void wifi_view_show_qrcode(const char * uri)
 {
-    // lv_obj_t * qr = lv_qrcode_create(lv_scr_act(), 150, lv_color_black(), lv_color_white());
-    // lv_qrcode_update(qr, uri, strlen(uri));
-    // lv_obj_center(qr);
+    lv_obj_t * qr = lv_qrcode_create(lv_scr_act(), 150, lv_color_black(), lv_color_white());
+    lv_qrcode_update(qr, uri, strlen(uri));
+    lv_obj_center(qr);
 }
 
 void wifi_view_update_status(const char * msg)
