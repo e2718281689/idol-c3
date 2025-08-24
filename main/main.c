@@ -28,7 +28,6 @@ SemaphoreHandle_t spi_mutex;
 void app_main(void)
 {
 
-
     spi_mutex = xSemaphoreCreateMutex();
 
     ESP_LOGI(TAG, "Initializing LittleFS");

@@ -1,3 +1,4 @@
+#include <dirent.h>
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -13,7 +14,10 @@
 #include "include/lv_port_disp.h"
 #include "include/lv_port_indev.h"
 #include "include/lv_port_fs.h"
-#include <dirent.h>
+#include "ui.h"
+
+#include "wifi_prov_mgr.h"
+
 static char *TAG = "lv_port_tick";
 
 #include "freertos/FreeRTOS.h"
@@ -88,49 +92,14 @@ void list_files_in_directory(const char *path) {
     closedir(dir);
 }
 
-/**
- * Extending the current theme
- */
-void lv_example_style_14(void)
-{
-    // lv_obj_t * btn;
-    // lv_obj_t * label;
-
-    // btn = lv_btn_create(lv_scr_act());
-    // lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, 20);
-
-    // label = lv_label_create(btn);
-    // lv_label_set_text(label, "Original theme");
-
-    // new_theme_init_and_set();
-
-    // btn = lv_btn_create(lv_scr_act());
-    // lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, 0, -20);
-
-    // label = lv_label_create(btn);
-    // lv_label_set_text(label, "New theme");
-    lv_obj_t * img;
-    img = lv_gif_create(lv_scr_act());
-    /* Assuming a File system is attached to letter 'A'
-    * E.g. set LV_USE_FS_STDIO 'A' in lv_conf.h */
-    lv_gif_set_src(img, "A:/sdcard/miho_150_bad.gif");
-    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
-
-    list_files_in_directory("/sdcard");
-
-
-}
-
-
-
-
 void lvgl_task(void *pvParameters)
 {
     ESP_ERROR_CHECK(app_lcd_init());
     ESP_ERROR_CHECK(app_lvgl_init());
     ESP_ERROR_CHECK(lvgl_indev_init());
     lv_port_fs_init();  
-    lv_example_style_14();
+
+    create_main_screen();
 
     while (1) {
 
