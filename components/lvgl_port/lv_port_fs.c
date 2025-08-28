@@ -161,7 +161,7 @@ static lv_fs_res_t fs_close(lv_fs_drv_t *drv, void *file_p)
 
     if (fclose((FILE *)file_p) == 0)
     {
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(spi_mutex); // 解锁
         return LV_FS_RES_OK;
     }
@@ -321,7 +321,7 @@ static lv_fs_res_t fs_dir_read(lv_fs_drv_t *drv, void *rddir_p, char *fn)
         if (entry == NULL)
         {
             fn[0] = '\0'; /* No more entries */
-            ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+            // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
             xSemaphoreGive(spi_mutex); // 解锁
             return LV_FS_RES_OK;
         }
@@ -351,7 +351,7 @@ static lv_fs_res_t fs_dir_close(lv_fs_drv_t *drv, void *rddir_p)
 
     if (closedir((DIR *)rddir_p) == 0)
     {
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(spi_mutex); // 解锁
         return LV_FS_RES_OK;
     }
@@ -374,7 +374,7 @@ static lv_fs_res_t fs_remove(lv_fs_drv_t *drv, const char *path)
 
     if (remove(fs_path) == 0)
     {
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(spi_mutex); // 解锁
         return LV_FS_RES_OK;
     }
@@ -403,7 +403,7 @@ static lv_fs_res_t fs_rename(lv_fs_drv_t *drv, const char *oldname, const char *
 
     if (rename(fs_oldname, fs_newname) == 0)
     {
-        ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
+        // ESP_LOGI(TAG, "[%s:%d] ", __FILE__, __LINE__);
         xSemaphoreGive(spi_mutex); // 解锁
         return LV_FS_RES_OK;
     }

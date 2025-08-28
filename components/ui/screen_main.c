@@ -73,6 +73,26 @@ void create_main_screen(void)
 {
     main_scr = lv_obj_create(NULL);
 
+    // --- 开始添加背景图片 ---
+
+    // 1. 创建一个图片对象，父对象是我们的主屏幕
+    lv_obj_t * bg_img = lv_img_create(main_scr);
+
+    // 2. 设置图片的源文件路径
+    // LVGL会自动通过已注册的文件系统驱动去读取这个文件
+    lv_img_set_src(bg_img, "A:/littlefs/Chie_240.bin");
+// A:/sdcard/MIHO_150.gif
+    // 3. 将图片对象置于最底层，作为背景
+    lv_obj_move_background(bg_img);
+
+    // (可选) 如果图片本身不等于屏幕大小，可以手动设置其尺寸以铺满屏幕
+    lv_obj_set_size(bg_img, lv_disp_get_hor_res(NULL), lv_disp_get_ver_res(NULL));
+    lv_obj_align(bg_img, LV_ALIGN_CENTER, 0, 0);
+
+    // --- 背景图片添加完毕 ---
+
+
+    // 创建你的其他控件，它们会自动显示在图片上层
     lv_obj_t * btn = lv_btn_create(main_scr);
     lv_obj_center(btn);
     lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
@@ -80,6 +100,7 @@ void create_main_screen(void)
     lv_obj_t * label = lv_label_create(btn);
     lv_label_set_text(label, "in view");
 
+    // 加载屏幕
     lv_scr_load(main_scr);
 }
 
