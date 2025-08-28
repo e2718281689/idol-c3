@@ -7,7 +7,7 @@
 #include "esp_log.h"
 // #include "web_download.h"
 
-#define DOWNLOAD_URL   "https://s.fnnas.net/s/4d12047a9ca54209b9"
+#define DOWNLOAD_URL   "http://192.168.2.76:8000/request_file/qianzhi"
 #define FILE_PATH "/littlefs/"
 
 static char *TAG = "web_download";
@@ -72,7 +72,7 @@ esp_err_t web_download_file(char *url)
     snprintf(buffer, sizeof(buffer), "%s%s", DOWNLOAD_URL, url);
 
     esp_http_client_config_t config = {
-        .url = buffer,
+        .url = DOWNLOAD_URL,
         .event_handler = _http_event_handler,
         .user_data = f,        // 将文件句柄传递给事件处理器
         .timeout_ms = 10000,   // 设置超时时间为10秒

@@ -20,7 +20,7 @@ void download_file_task(void *pvParameters)
     else 
     {
         ESP_LOGI("download_file_task", "File downloaded successfully");
-        wifi_view_show_image("/spiffs/qianzhi.bin");
+        wifi_view_show_image("A:/littlefs/Chie_240.bin");
     }
 
     vTaskDelete(NULL);
