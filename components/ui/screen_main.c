@@ -19,6 +19,38 @@ void wifi_view_show_qrcode(const char * uri)
     lv_obj_center(qr);
 }
 
+/**
+ * @brief 在当前屏幕的中央显示一张指定路径的图片。
+ *
+ * @param image_path 图片文件的完整路径字符串 (例如 "A:/littlefs/my_image.bin")
+ * @return lv_obj_t* 返回创建的图片对象的指针，如果需要后续操作（如移动、删除）可以使用它。
+ */
+lv_obj_t * wifi_view_show_image(const char * image_path)
+{
+    // 1. 获取当前活动的屏幕作为父对象
+    lv_obj_t * parent = lv_scr_act();
+    if (!parent) {
+        // 如果没有活动的屏幕，则无法创建图片
+        return NULL;
+    }
+
+    // 2. 创建一个新的图片对象，父对象是当前屏幕
+    lv_obj_t * img = lv_img_create(parent);
+
+    // 3. 设置图片的源文件路径
+    // LVGL 会自动通过你注册的文件系统驱动来读取这个文件
+    lv_img_set_src(img, image_path);
+
+    // 4. 将图片放置在屏幕中央 (这是一个很好的默认行为)
+    lv_obj_center(img);
+    
+    // (可选) 如果图片需要交互，可以开启点击事件
+    // lv_obj_add_flag(img, LV_OBJ_FLAG_CLICKABLE);
+
+    // 5. 返回创建的图片对象，方便调用者后续控制
+    return img;
+}
+
 void wifi_view_update_status(const char * msg)
 {
     if (!label_task) {
@@ -27,27 +59,6 @@ void wifi_view_update_status(const char * msg)
     }
     lv_label_set_text(label_task, msg);
 }
-
-
-// // 后台任务
-// static void long_task(void * pvParameter)
-// {
-
-//     lv_label_set_text(label_task, "wifi_prov_mgr!");
-
-//     wifi_prov_mgr();
-
-//     lv_label_set_text(label_task, "over!");
-
-//     // 保持显示一会儿
-//     vTaskDelay(pdMS_TO_TICKS(1000));
-
-//     // 返回主界面
-//     lv_scr_load(main_scr);
-
-//     // 删除这个任务
-//     vTaskDelete(NULL);
-// }
 
 // 按钮事件：进入任务界面
 static void btn_event_cb(lv_event_t * e)
@@ -68,68 +79,49 @@ static void btn_event_cb(lv_event_t * e)
     }
 }
 
+// 按钮事件：进入任务界面
+static void image_btn_event_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) == LV_EVENT_CLICKED) 
+    {
+
+
+        task_scr = lv_obj_create(NULL);
+
+        label_task = lv_label_create(task_scr);
+        lv_obj_center(label_task);
+        lv_label_set_text(label_task, "ready ...");
+
+        lv_scr_load(task_scr);
+
+        download_file_task_prov();
+    }
+}
+
 // 创建主界面
 void create_main_screen(void)
 {
     main_scr = lv_obj_create(NULL);
 
-    // --- 开始添加背景图片 ---
-
-    // 1. 创建一个图片对象，父对象是我们的主屏幕
-    lv_obj_t * bg_img = lv_img_create(main_scr);
-
-    // 2. 设置图片的源文件路径
-    // LVGL会自动通过已注册的文件系统驱动去读取这个文件
-    lv_img_set_src(bg_img, "A:/littlefs/Chie_240.bin");
-// A:/sdcard/MIHO_150.gif
-    // 3. 将图片对象置于最底层，作为背景
-    lv_obj_move_background(bg_img);
-
-    // (可选) 如果图片本身不等于屏幕大小，可以手动设置其尺寸以铺满屏幕
-    lv_obj_set_size(bg_img, lv_disp_get_hor_res(NULL), lv_disp_get_ver_res(NULL));
-    lv_obj_align(bg_img, LV_ALIGN_CENTER, 0, 0);
-
-    // --- 背景图片添加完毕 ---
-
-
-    // 创建你的其他控件，它们会自动显示在图片上层
+    // 创建第一个按钮
     lv_obj_t * btn = lv_btn_create(main_scr);
-    lv_obj_center(btn);
+    // 按钮在屏幕上方居中，向上偏移 1/4 屏幕高度
+    lv_obj_align(btn, LV_ALIGN_CENTER, 0, - (lv_disp_get_ver_res(NULL) / 4));
     lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
 
     lv_obj_t * label = lv_label_create(btn);
-    lv_label_set_text(label, "in view");
+    lv_label_set_text(label, "wifi bt net ");
+    lv_obj_center(label);
 
-    // 加载屏幕
+    // 创建第二个按钮
+    lv_obj_t * btn2 = lv_btn_create(main_scr);
+    // 按钮在屏幕下方居中，向下偏移 1/4 屏幕高度
+    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, (lv_disp_get_ver_res(NULL) / 4));
+    lv_obj_add_event_cb(btn2, image_btn_event_cb, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t * label2 = lv_label_create(btn2);
+    lv_label_set_text(label2, "show image");
+    lv_obj_center(label2);
+
     lv_scr_load(main_scr);
 }
-
-// /**
-//  * Extending the current theme
-//  */
-// void lv_example_style_14(void)
-// {
-//     lv_obj_t * btn;
-//     lv_obj_t * label;
-
-//     btn = lv_btn_create(lv_scr_act());
-//     lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, 20);
-
-//     label = lv_label_create(btn);
-//     lv_label_set_text(label, "Original theme");
-
-//     new_theme_init_and_set();
-
-//     btn = lv_btn_create(lv_scr_act());
-//     lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, 0, -20);
-
-//     label = lv_label_create(btn);
-//     lv_label_set_text(label, "New theme");
-//     // lv_obj_t * img;
-//     // img = lv_gif_create(lv_scr_act());
-//     // /* Assuming a File system is attached to letter 'A'
-//     // * E.g. set LV_USE_FS_STDIO 'A' in lv_conf.h */
-//     // lv_gif_set_src(img, "A:/sdcard/miho_150_bad.gif");
-//     // lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
-
-// }
