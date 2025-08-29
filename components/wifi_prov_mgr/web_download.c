@@ -7,7 +7,7 @@
 #include "esp_log.h"
 // #include "web_download.h"
 
-#define DOWNLOAD_URL   "http://192.168.2.76:8000/request_file/qianzhi"
+#define DOWNLOAD_URL   "http://idolc3.cjiax.top:3466/request_file/qianzhi"
 #define FILE_PATH "/littlefs/"
 
 static char *TAG = "web_download";
