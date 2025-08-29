@@ -7,8 +7,8 @@
 #include "esp_log.h"
 // #include "web_download.h"
 
-#define DOWNLOAD_URL   "http://idolc3.cjiax.top:3466/request_file/qianzhi"
-#define FILE_PATH "/littlefs/"
+static char  *DOWNLOAD_URL = "http://idolc3.cjiax.top:3466/request_file/";
+static char  *FILE_PATH = "/littlefs/";
 
 static char *TAG = "web_download";
 
@@ -53,16 +53,17 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 }
 
 // 文件下载任务
-esp_err_t web_download_file(char *url)
+esp_err_t web_download_file(char *url, char* FILE_url)
 {
 
-    char buffer[100]; 
+    char buffer[200]; 
     
-    char *xxx = "/littlefs/Chie_240.bin";
+    // char *xxx = "/littlefs/Chie_240.bin";
     snprintf(buffer, sizeof(buffer), "%s%s.bin", FILE_PATH, url);
-
-    ESP_LOGI(TAG, "Opening file for writing: %s", xxx);
-    FILE* f = fopen(xxx, "wb"); // 使用 "wb" 以二进制写模式打开
+    strcpy(FILE_url,buffer);
+    
+    ESP_LOGI(TAG, "Opening file for writing: %s", buffer);
+    FILE* f = fopen(buffer, "wb"); // 使用 "wb" 以二进制写模式打开
     if (f == NULL) {
         ESP_LOGE(TAG, "Failed to open file for writing");
         vTaskDelete(NULL);
@@ -70,9 +71,10 @@ esp_err_t web_download_file(char *url)
     }
 
     snprintf(buffer, sizeof(buffer), "%s%s", DOWNLOAD_URL, url);
+    ESP_LOGI(TAG, "download url: %s", buffer);
 
     esp_http_client_config_t config = {
-        .url = DOWNLOAD_URL,
+        .url = buffer,
         .event_handler = _http_event_handler,
         .user_data = f,        // 将文件句柄传递给事件处理器
         .timeout_ms = 10000,   // 设置超时时间为10秒

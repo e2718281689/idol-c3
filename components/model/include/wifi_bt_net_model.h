@@ -15,5 +15,5 @@ void wifi_bt_net_model_run(char* url);
 void wifi_bt_net_model_net(void);
 void wifi_bt_net_model_wait(void);
 
-esp_err_t web_download_file(char *url);
+esp_err_t web_download_file(char *url, char* FILE_url);
 
