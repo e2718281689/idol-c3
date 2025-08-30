@@ -114,7 +114,7 @@ static const char *lv_path_to_fatfs_path(lv_fs_drv_t *drv, const char *lv_path)
     const char *vfs_prefix = "/sdcard";
     size_t vfs_prefix_len = strlen(vfs_prefix);
 
-    printf("Input lv_path: %s\n", lv_path);
+    // printf("Input lv_path: %s\n", lv_path);
 
     // 情况一：路径是标准的 LVGL 格式 "A:..."
     if (lv_path[0] == drv->letter && lv_path[1] == ':') {
@@ -132,7 +132,7 @@ static const char *lv_path_to_fatfs_path(lv_fs_drv_t *drv, const char *lv_path)
 
     }
 
-    printf("Output fatfs_path: %s\n", fatfs_path);
+    // printf("Output fatfs_path: %s\n", fatfs_path);
 
     return fatfs_path;
 }

@@ -26,7 +26,8 @@ void download_file_task(void *pvParameters)
     else 
     {
         ESP_LOGI(TAG, "File downloaded successfully");
-        snprintf(lvgl_show_file_url, sizeof(lvgl_show_file_url), "A:%s", download_file);
+        // snprintf(lvgl_show_file_url, sizeof(lvgl_show_file_url), "A:%s", download_file);
+        snprintf(lvgl_show_file_url, sizeof(lvgl_show_file_url), "A:/sdcard/%s", download_file + 3);
         ESP_LOGI(TAG, "download_file %s", lvgl_show_file_url);
         wifi_view_show_image(lvgl_show_file_url);
     }
