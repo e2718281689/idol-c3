@@ -1,4 +1,6 @@
-#pragma once
+#ifndef UI_H
+#define UI_H
+
 #include "lvgl.h"
 
 // 创建主界面
@@ -10,3 +12,5 @@ void wifi_view_load_main();
 void wifi_view_show_qrcode(const char * uri);
 void wifi_view_update_status(const char * msg);
 lv_obj_t * wifi_view_show_image(const char * image_path);
+
+#endif /*UI_H*/

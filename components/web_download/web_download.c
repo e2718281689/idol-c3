@@ -1,11 +1,7 @@
-#include "controller.h"
-#include "wifi_bt_net_model.h"
-#include "ui.h"
 #include "freertos/FreeRTOS.h"
-#include "wifi_prov_mgr.h"
+#include "web_download.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
-// #include "web_download.h"
 
 static char  *DOWNLOAD_URL = "http://idolc3.cjiax.top:3466/request_file/";
 static char  *FILE_PATH = "/littlefs/";
