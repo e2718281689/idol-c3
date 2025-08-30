@@ -1,4 +1,4 @@
-idf_component_register(SRCS "safe_fs.c" 
+idf_component_register(SRCS "safe_fatfs.c" 
                         INCLUDE_DIRS "include" 
-                        REQUIRES 
+                        REQUIRES "fatfs"
                         )

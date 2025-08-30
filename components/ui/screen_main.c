@@ -6,7 +6,6 @@ static lv_obj_t * main_scr;   // 主界面对象
 static lv_obj_t * task_scr;   // 任务界面对象
 static lv_obj_t * label_task; // 任务界面文本
 
-
 void wifi_view_load_main()
 {
     lv_scr_load(main_scr);
@@ -98,12 +97,34 @@ static void image_btn_event_cb(lv_event_t * e)
     }
 }
 
-// 创建主界面
+
+
 void create_main_screen(void)
 {
     main_scr = lv_obj_create(NULL);
 
-    // 创建第一个按钮
+    // --- 新增代码：创建并设置背景图片 ---
+
+    // 1. 创建一个图像对象，它的父对象是我们的主屏幕
+    lv_obj_t * background_img = lv_img_create(main_scr);
+
+    // 2. 设置图像的来源。
+    //    这里的路径 "A:/images/background.bin" 依赖于您配置好的 lv_port_fs.c
+    //    'A:' 会被映射到 TF 卡。请确保 TF 卡的根目录下有一个 "images" 文件夹，
+    //    并且里面存放了名为 "background.bin" 的图片文件。
+    lv_img_set_src(background_img, "A:/sdcard/Chie_240.bin");
+
+    // 3. 将图片在屏幕上居中显示
+    lv_obj_align(background_img, LV_ALIGN_CENTER, 0, 0);
+    
+    // (可选) 如果图片很大，覆盖了整个屏幕，建议添加此标志。
+    // 这会让图片对象“不可点击”，使得触摸事件可以“穿透”到它后面的屏幕或按钮上。
+    lv_obj_add_flag(background_img, LV_OBJ_FLAG_ADV_HITTEST);
+
+
+    // --- 原有的代码保持不变 ---
+
+    // 创建第一个按钮 (它将被绘制在背景图片之上)
     lv_obj_t * btn = lv_btn_create(main_scr);
     // 按钮在屏幕上方居中，向上偏移 1/4 屏幕高度
     lv_obj_align(btn, LV_ALIGN_CENTER, 0, - (lv_disp_get_ver_res(NULL) / 4));
@@ -113,7 +134,7 @@ void create_main_screen(void)
     lv_label_set_text(label, "wifi bt net ");
     lv_obj_center(label);
 
-    // 创建第二个按钮
+    // 创建第二个按钮 (它也将被绘制在背景图片之上)
     lv_obj_t * btn2 = lv_btn_create(main_scr);
     // 按钮在屏幕下方居中，向下偏移 1/4 屏幕高度
     lv_obj_align(btn2, LV_ALIGN_CENTER, 0, (lv_disp_get_ver_res(NULL) / 4));
