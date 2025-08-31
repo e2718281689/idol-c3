@@ -1,8 +1,7 @@
-# Corrected Partition Table for 4MB Flash with littlefs
-# Name,    Type, SubType,    Offset,   Size,      Flags
-nvs,     data, nvs,        ,         20K,       
-phy_init,data, phy,        ,         4K,
-otadata, data, ota,        ,         8K,
-factory, app,  factory,    ,         500k,       
-app0,    app,  ota_0,      ,         2M,        
-storage, data, littlefs,   ,         500k,          
+# Name,    Type, SubType,    Offset,      Size,      Flags
+nvs,       data, nvs,        0x9000,      20K
+phy_init,  data, phy,        0xe000,      4K
+otadata,   data, ota,        0xf000,      8K
+factory,   app,  factory,    0x20000,     500K
+app0,      app,  ota_0,      0xa0000,     2M
+storage,   data, littlefs,   0x2a0000,    500K
