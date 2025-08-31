@@ -11,6 +11,38 @@ static char *FILE_PATH    = "0:/";
 static char *TAG = "web_download";
 
 // HTTP 事件处理函数
+// esp_err_t _http_event_handler(esp_http_client_event_t *evt)
+// {
+//     FIL *fp = (FIL *)evt->user_data; // FatFS 文件类型
+
+//     switch (evt->event_id) {
+//     case HTTP_EVENT_ERROR:
+//         ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
+//         break;
+
+//     case HTTP_EVENT_ON_DATA:
+//         ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+//         UINT bw = 0;
+//         if (safe_f_write(fp, evt->data, evt->data_len, &bw) != FR_OK || bw != evt->data_len) {
+//             ESP_LOGE(TAG, "File write error");
+//         }
+//         break;
+
+//     case HTTP_EVENT_ON_FINISH:
+//         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
+//         ESP_LOGI(TAG, "File download finished. Closing file.");
+//         safe_f_close(fp);
+//         free(fp); // 我们 malloc 了 fp，最后释放
+//         break;
+
+//     default:
+//         break;
+//     }
+//     return ESP_OK;
+// }
+
+
+// HTTP 事件处理函数
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     FIL *fp = (FIL *)evt->user_data; // FatFS 文件类型
@@ -18,21 +50,25 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     switch (evt->event_id) {
     case HTTP_EVENT_ERROR:
         ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
-        break;
+        return ESP_FAIL; // 返回错误，以便中止下载
 
     case HTTP_EVENT_ON_DATA:
         ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
         UINT bw = 0;
+        esp_err_t write_err = ESP_OK;
         if (safe_f_write(fp, evt->data, evt->data_len, &bw) != FR_OK || bw != evt->data_len) {
             ESP_LOGE(TAG, "File write error");
+            write_err = ESP_FAIL; // 标记写入失败
         }
-        break;
+        return write_err; // 返回写入操作的结果
 
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
         ESP_LOGI(TAG, "File download finished. Closing file.");
-        safe_f_close(fp);
-        free(fp); // 我们 malloc 了 fp，最后释放
+        if (fp) {
+            safe_f_close(fp);
+            free(fp); // 我们 malloc 了 fp，最后释放
+        }
         break;
 
     default:
@@ -40,6 +76,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     }
     return ESP_OK;
 }
+
 
 // 文件下载任务
 esp_err_t web_download_file(char *url, char *FILE_url)
@@ -81,14 +118,19 @@ esp_err_t web_download_file(char *url, char *FILE_url)
         ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %" PRId64,
                  esp_http_client_get_status_code(client),
                  esp_http_client_get_content_length(client));
+        // 下载成功，文件已在 _http_event_handler 中关闭
     } else {
         ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
-        // 失败也要关闭文件，防止泄漏
-        safe_f_close(fp);
-        free(fp);
+        // 下载失败，需要手动关闭文件句柄
+        if (fp) {
+            safe_f_close(fp);
+            free(fp);
+            fp = NULL; // 防止悬空指针
+        }
     }
 
     esp_http_client_cleanup(client);
 
-    return err;
+    // 如果 fp 已经被释放，返回 ESP_OK，否则返回错误
+    return (fp == NULL) ? err : ESP_OK;
 }
