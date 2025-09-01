@@ -1,5 +1,5 @@
 idf_component_register(SRCS "wifi_controller.c" "web_download_controller.c"  "ota_update.c"
                         INCLUDE_DIRS "include" 
-                        REQUIRES "driver" "web_download" "ui" "model" "wifi_prov_mgr"
+                        REQUIRES "driver" "web_download" "ui" "model" "wifi_prov_mgr" "bootloader_support" "app_update" "esp_app_format"
                         PRIV_REQUIRES espressif__esp_lvgl_port
                         )
