@@ -97,52 +97,80 @@ static void image_btn_event_cb(lv_event_t * e)
     }
 }
 
+static void ota_update_event_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) == LV_EVENT_CLICKED) 
+    {
+        task_scr = lv_obj_create(NULL);
 
+        label_task = lv_label_create(task_scr);
+        lv_obj_center(label_task);
+        lv_label_set_text(label_task, "ota update ...");
+
+        lv_scr_load(task_scr);
+
+        // download_file_task_prov();
+    }
+}
 
 void create_main_screen(void)
 {
     main_scr = lv_obj_create(NULL);
 
-    // --- 新增代码：创建并设置背景图片 ---
+    // --- 背景图片部分保持不变 ---
 
-    // 1. 创建一个图像对象，它的父对象是我们的主屏幕
+    // 1. 创建一个图像对象
     lv_obj_t * background_img = lv_img_create(main_scr);
 
-    // 2. 设置图像的来源。
-    //    这里的路径 "A:/images/background.bin" 依赖于您配置好的 lv_port_fs.c
-    //    'A:' 会被映射到 TF 卡。请确保 TF 卡的根目录下有一个 "images" 文件夹，
-    //    并且里面存放了名为 "background.bin" 的图片文件。
+    // 2. 设置图像的来源
     lv_img_set_src(background_img, "A:/sdcard/Chie_240.bin");
 
     // 3. 将图片在屏幕上居中显示
     lv_obj_align(background_img, LV_ALIGN_CENTER, 0, 0);
     
-    // (可选) 如果图片很大，覆盖了整个屏幕，建议添加此标志。
-    // 这会让图片对象“不可点击”，使得触摸事件可以“穿透”到它后面的屏幕或按钮上。
+    // 4. (可选) 添加“不可点击”标志，让触摸事件可以穿透背景图
     lv_obj_add_flag(background_img, LV_OBJ_FLAG_ADV_HITTEST);
 
 
-    // --- 原有的代码保持不变 ---
+    // --- 修改后的按钮创建代码 ---
 
-    // 创建第一个按钮 (它将被绘制在背景图片之上)
-    lv_obj_t * btn = lv_btn_create(main_scr);
-    // 按钮在屏幕上方居中，向上偏移 1/4 屏幕高度
-    lv_obj_align(btn, LV_ALIGN_CENTER, 0, - (lv_disp_get_ver_res(NULL) / 4));
-    lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
+    // 获取屏幕的垂直分辨率，用于计算位置
+    lv_coord_t screen_height = lv_disp_get_ver_res(NULL);
+    // 计算出 1/4 屏幕高度的偏移量，用于等间距排列
+    lv_coord_t y_offset = screen_height / 4;
 
-    lv_obj_t * label = lv_label_create(btn);
-    lv_label_set_text(label, "wifi bt net ");
-    lv_obj_center(label);
+    // 创建第一个按钮 (顶部按钮)
+    lv_obj_t * btn1 = lv_btn_create(main_scr);
+    // 按钮在屏幕中心，向上偏移 1/4 屏幕高度
+    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -y_offset);
+    lv_obj_add_event_cb(btn1, btn_event_cb, LV_EVENT_CLICKED, NULL);
 
-    // 创建第二个按钮 (它也将被绘制在背景图片之上)
+    lv_obj_t * label1 = lv_label_create(btn1);
+    lv_label_set_text(label1, "WiFi & BT"); // 修改了文本以便区分
+    lv_obj_center(label1);
+
+    // 创建第二个按钮 (中间按钮)
     lv_obj_t * btn2 = lv_btn_create(main_scr);
-    // 按钮在屏幕下方居中，向下偏移 1/4 屏幕高度
-    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, (lv_disp_get_ver_res(NULL) / 4));
+    // 按钮居中于屏幕
+    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 0); 
     lv_obj_add_event_cb(btn2, image_btn_event_cb, LV_EVENT_CLICKED, NULL);
 
     lv_obj_t * label2 = lv_label_create(btn2);
-    lv_label_set_text(label2, "show image");
+    lv_label_set_text(label2, "Show Image"); // 修改了文本以便区分
     lv_obj_center(label2);
 
+    // 创建第三个按钮 (底部按钮)
+    lv_obj_t * btn3 = lv_btn_create(main_scr);
+    // 按钮在屏幕中心，向下偏移 1/4 屏幕高度
+    lv_obj_align(btn3, LV_ALIGN_CENTER, 0, y_offset); 
+    // 注意：您需要为这个新按钮提供一个事件回调函数，这里暂时使用 btn3_event_cb 作为示例
+    lv_obj_add_event_cb(btn3, ota_update_event_cb, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t * label3 = lv_label_create(btn3);
+    lv_label_set_text(label3, "ota update"); // 新按钮的文本
+    lv_obj_center(label3);
+
+
+    // --- 加载屏幕部分保持不变 ---
     lv_scr_load(main_scr);
 }
