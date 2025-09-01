@@ -17,7 +17,7 @@ void download_file_task(void *pvParameters)
     char lvgl_show_file_url[200];
 
     // 开始下载文件
-    err = web_download_file(download_name, download_file);
+    err = web_download_file_by_alias(download_name, download_file, 512);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to download file");
         wifi_view_update_status("Download failed");

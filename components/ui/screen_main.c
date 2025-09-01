@@ -109,7 +109,7 @@ static void ota_update_event_cb(lv_event_t * e)
 
         lv_scr_load(task_scr);
 
-        // download_file_task_prov();
+        ota_update_start_prov();
     }
 }
 
