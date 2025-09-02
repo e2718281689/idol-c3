@@ -9,8 +9,8 @@
 static const char *TAG = "web_download";
 
 // --- 服务器和文件系统配置 ---
-static const char *BASE_REQUEST_URL = "http://192.168.2.76:8000/request_file/";
-static const char *BASE_OTA_URL = "http://192.168.2.76:8000/ota";
+static const char *BASE_REQUEST_URL = "http://idolc3.cjiax.top:34611/request_file/";
+static const char *BASE_OTA_URL = "http://idolc3.cjiax.top:34611/ota";
 static const char *FILE_SYSTEM_PREFIX = "0:/";
 
 // --- 内部辅助结构体和函数 ---
