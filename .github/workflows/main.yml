@@ -1,0 +1,37 @@
+# .github/workflows/build.yml
+
+name: ESP-IDF Build
+
+# 触发工作流的事件
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build project
+    # 使用最新的 Ubuntu 运行环境
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 第一步：检出你的代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # 如果你的项目包含子模块(submodules)，这一行是必须的
+          submodules: 'recursive'
+
+      # 第二步：设置 ESP-IDF 环境并构建项目
+      - name: Build ESP-IDF project
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          # ESP-IDF 版本 (例如: 'v5.1.2', 'latest' 代表最新版)
+          esp_idf_version: 'v5.4.2'
+          # 目标芯片 (例如: 'esp32', 'esp32s3', 'esp32c3')
+          target: 'esp32c3'
+          # 要构建的项目路径，'.' 代表根目录
+          path: '.'
