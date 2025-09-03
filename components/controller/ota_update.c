@@ -7,6 +7,9 @@
 #include "esp_app_format.h"
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
+#include <esp_wifi_types_generic.h>
+#include <esp_wifi.h>
+
 
 static char *TAG = "ota_update_controller";
 
@@ -17,8 +20,18 @@ void ota_update_prov_task(void *pv)
 {
     char ota_file_path[150]; // 准备一个足够大的缓冲区
 
-    const esp_app_desc_t *app_desc = esp_app_get_description();
 
+    wifi_ap_record_t ap_info;
+    if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+        ESP_LOGE(TAG, "Wi-Fi is not connected");
+
+        wifi_view_update_status("Wi-Fi is not connected");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        goto err;
+    }
+
+
+    const esp_app_desc_t *app_desc = esp_app_get_description();
 
     ota_status_t ota_status = web_ota_check_and_download(
         DEVICE_MODEL, 
@@ -59,14 +72,18 @@ void ota_update_prov_task(void *pv)
             break;
         case OTA_NO_UPDATE_AVAILABLE:
             ESP_LOGI(TAG, "OTA Info: No new updates available.");
+            wifi_view_update_status("No new updates available");
+            vTaskDelay(pdMS_TO_TICKS(1000));
             break;
         case OTA_CHECK_FAILED:
             ESP_LOGE(TAG, "OTA Error: Failed to check or download update.");
+            wifi_view_update_status("Failed to check or download update");
+            vTaskDelay(pdMS_TO_TICKS(1000));
             break;
     }
 
+err:
     wifi_view_load_main();
-
     vTaskDelete(NULL);
 }
 
