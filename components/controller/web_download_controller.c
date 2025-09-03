@@ -35,6 +35,7 @@ void download_file_task(void *pvParameters)
         snprintf(lvgl_show_file_url, sizeof(lvgl_show_file_url), "A:/sdcard/%s", download_file + 3);
         ESP_LOGI(TAG, "download_file %s", lvgl_show_file_url);
         wifi_view_show_image(lvgl_show_file_url);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     } else {
         ESP_LOGE(TAG, "Failed to download file");
         wifi_view_update_status("Download failed");
