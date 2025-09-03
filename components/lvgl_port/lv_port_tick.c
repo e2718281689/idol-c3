@@ -1,3 +1,4 @@
+#include <dirent.h>
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -12,9 +13,15 @@
 #include "include/lv_port_tick.h"
 #include "include/lv_port_disp.h"
 #include "include/lv_port_indev.h"
+#include "include/lv_port_fs.h"
+#include "ui.h"
+
+#include "wifi_prov_mgr.h"
 
 static char *TAG = "lv_port_tick";
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 // Some resources are lazy allocated in the LCD driver, the threadhold is left for that case
 #define TEST_MEMORY_LEAK_THRESHOLD (512)
@@ -34,69 +41,71 @@ static void check_leak(size_t start_free, size_t end_free, const char *type)
 
 
 static lv_style_t style_btn;
-static lv_style_t style_button_pressed;
-static lv_style_t style_button_red;
 
-static void event_handler(lv_event_t * e)
+/*Will be called when the styles of the base theme are already added
+  to add new styles*/
+static void new_theme_apply_cb(lv_theme_t * th, lv_obj_t * obj)
 {
-    lv_event_code_t code = lv_event_get_code(e);
+    LV_UNUSED(th);
 
-    if(code == LV_EVENT_CLICKED) {
-        LV_LOG_USER("Clicked");
-    }
-    else if(code == LV_EVENT_VALUE_CHANGED) {
-        LV_LOG_USER("Toggled");
+    if(lv_obj_check_type(obj, &lv_btn_class)) {
+        lv_obj_add_style(obj, &style_btn, 0);
     }
 }
 
-void lv_example_button_1(void)
+static void new_theme_init_and_set(void)
 {
-    lv_obj_t * label;
+    /*Initialize the styles*/
+    lv_style_init(&style_btn);
+    lv_style_set_bg_color(&style_btn, lv_palette_main(LV_PALETTE_GREEN));
+    lv_style_set_border_color(&style_btn, lv_palette_darken(LV_PALETTE_GREEN, 3));
+    lv_style_set_border_width(&style_btn, 3);
 
-    // 获取当前活动屏幕对象
-    lv_obj_t *scr = lv_scr_act();
+    /*Initialize the new theme from the current theme*/
+    lv_theme_t * th_act = lv_disp_get_theme(NULL);
+    static lv_theme_t th_new;
+    th_new = *th_act;
 
-    // 设置背景色为白色
-    lv_obj_set_style_bg_color(scr, lv_color_white(), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
+    /*Set the parent theme and the style apply callback for the new theme*/
+    lv_theme_set_parent(&th_new, th_act);
+    lv_theme_set_apply_cb(&th_new, new_theme_apply_cb);
 
-    
-    lv_obj_t * btn1 = lv_button_create(lv_screen_active());
-    lv_obj_add_event_cb(btn1, event_handler, LV_EVENT_ALL, NULL);
-    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, -40);
-    lv_obj_remove_flag(btn1, LV_OBJ_FLAG_PRESS_LOCK);
-
-    label = lv_label_create(btn1);
-    lv_label_set_text(label, "Button");
-    lv_obj_center(label);
-
-    lv_obj_t * btn2 = lv_button_create(lv_screen_active());
-    lv_obj_add_event_cb(btn2, event_handler, LV_EVENT_ALL, NULL);
-    lv_obj_align(btn2, LV_ALIGN_CENTER, 0, 40);
-    lv_obj_add_flag(btn2, LV_OBJ_FLAG_CHECKABLE);
-    lv_obj_set_height(btn2, LV_SIZE_CONTENT);
-
-    label = lv_label_create(btn2);
-    lv_label_set_text(label, "Toggle");
-    lv_obj_center(label);
-
+    /*Assign the new theme to the current display*/
+    lv_disp_set_theme(NULL, &th_new);
 }
 
+void list_files_in_directory(const char *path) {
+    DIR *dir = opendir(path);
+    if (!dir) {
+        printf("Error opening directory: %s\n", path);
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        // readdir 会返回 "." 和 ".."，通常我们希望忽略它们
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            printf("Found file: %s\n", entry->d_name);
+        }
+    }
+
+    closedir(dir);
+}
 
 void lvgl_task(void *pvParameters)
 {
-
-
-    
     ESP_ERROR_CHECK(app_lcd_init());
     ESP_ERROR_CHECK(app_lvgl_init());
     ESP_ERROR_CHECK(lvgl_indev_init());
+    lv_port_fs_init();  
 
-    lv_example_button_1();
+    create_main_screen();
 
     while (1) {
-        lv_timer_handler();
+
+        uint32_t time = lv_timer_handler();
         vTaskDelay(pdMS_TO_TICKS(10));  // 推荐 5~20ms
+        // ESP_LOGI(TAG, "[time:%d] ", (int)time);
     }
 }
 

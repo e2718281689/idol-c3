@@ -18,15 +18,30 @@
 #include "esp_lcd_st7789v3.h"
 #include "esp_littlefs.h"
 #include "esp_task_wdt.h"
-#include "milkytime.c"
-#include "moiw_2014.c"
 #include "lv_port_tick.h"
 #include "sht40.h"
+#include "esp_app_desc.h"
+#include "esp_app_format.h"
 
 static char *TAG = "main";
 
+SemaphoreHandle_t spi_mutex;
+
 void app_main(void)
 {
+
+    const esp_app_desc_t *app_desc = esp_app_get_description();
+    if (app_desc) {
+    ESP_LOGI(TAG, "Project Name: %s", app_desc->project_name);
+    ESP_LOGI(TAG, "Version: %s", app_desc->version);
+    ESP_LOGI(TAG, "Compile Time: %s %s", app_desc->date, app_desc->time);
+    ESP_LOGI(TAG, "IDF Version: %s", app_desc->idf_ver);
+    } else {
+    ESP_LOGE(TAG, "Failed to get application description");
+    }
+
+
+    spi_mutex = xSemaphoreCreateMutex();
 
     ESP_LOGI(TAG, "Initializing LittleFS");
 
@@ -55,6 +70,6 @@ void app_main(void)
     printf("TEST ESP LVGL port\n\r");
 
 
-    xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(lvgl_task, "taskLVGL", 8192, NULL, 10, NULL, 0);
 
 }

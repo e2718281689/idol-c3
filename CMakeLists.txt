@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
+set(PROJECT_VER "1.0.1") 
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(spi_lcd_st7789)
+project(idol_c3)
