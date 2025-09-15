@@ -34,7 +34,7 @@ jobs:
       - name: Package firmware
         run: |
           # 请将 'your-project-name' 替换为你的项目名
-          PROJECT_NAME=your-project-name
+          PROJECT_NAME=idol_c3
           
           # 创建一个临时目录来存放要打包的文件
           mkdir -p firmware_package
