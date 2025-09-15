@@ -1,8 +1,7 @@
-# .github/workflows/release.yml (建议改个更有意义的名字)
+# .github/workflows/release.yml
 
 name: Create Release and Upload Firmware
 
-# 1. 修改触发条件：只在创建以 'v' 开头的标签时触发
 on:
   push:
     tags:
@@ -13,6 +12,12 @@ jobs:
     name: Build and Create Release
     runs-on: ubuntu-latest
     
+    # ==================== 核心修改点 1 ====================
+    # 明确为这个任务授予写权限，以允许创建 Release
+    permissions:
+      contents: write
+    # ======================================================
+
     steps:
       # 第一步：检出代码
       - name: Checkout repository
@@ -20,44 +25,42 @@ jobs:
         with:
           submodules: 'recursive'
 
-      # 第二步：构建项目 (和之前一样)
+      # 第二步：构建项目
       - name: Build ESP-IDF project
         id: build-project
         uses: espressif/esp-idf-ci-action@v1
         with:
           esp_idf_version: 'v5.4.2'
-          target: 'esp32c3'
+          target: 'esp32c3' # 请确认这是您想要的目标芯片
           path: '.'
-      
-      # 第三步：将所有固件打包成一个 ZIP 文件
-      # 这样在 Release 页面只需要下载一个文件，更整洁
+
+      # 第三步：将固件打包成 ZIP 文件
       - name: Package firmware
         run: |
-          # 请将 'your-project-name' 替换为你的项目名
+          # !!! 重要：请将下面的 'your-project-name' 替换为您项目的真实名称 !!!
           PROJECT_NAME=idol_c3
           
-          # 创建一个临时目录来存放要打包的文件
           mkdir -p firmware_package
           cp build/bootloader/bootloader.bin firmware_package/
           cp build/partition_table/partition-table.bin firmware_package/
           cp "build/${PROJECT_NAME}.bin" firmware_package/
           cp build/flasher_args.json firmware_package/
           
-          # 将目录打包成 zip 文件
-          # ${{ github.ref_name }} 会自动获取标签名，例如 v1.0.0
+          # 使用 github.ref_name 获取干净的标签名 (例如 v1.0.1)
           zip -r "firmware-${{ github.ref_name }}-${{ steps.build-project.outputs.target }}.zip" firmware_package
-      
+
       # 第四步：根据标签创建 GitHub Release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 这是 GitHub 自动提供的 token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # 使用标签名作为 Release 的名称
-          tag_name: ${{ github.ref }}
+          # ==================== 核心修改点 2 ====================
+          # 使用 github.ref_name 来获取干净的标签名，而不是 refs/tags/v1.0.1
+          tag_name: ${{ github.ref_name }}
           release_name: Release ${{ github.ref_name }}
-          # 可以设置为空，或自动生成发布说明
+          # ======================================================
           body: |
             自动构建的发布版本 ${{ github.ref_name }}
           draft: false
@@ -69,10 +72,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # 从上一步获取上传 URL
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          # 要上传的文件的路径
           asset_path: ./firmware-${{ github.ref_name }}-${{ steps.build-project.outputs.target }}.zip
-          # 在 Release 页面上显示的文件名
           asset_name: firmware-${{ github.ref_name }}-${{ steps.build-project.outputs.target }}.zip
           asset_content_type: application/zip
