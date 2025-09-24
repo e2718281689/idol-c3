@@ -35,19 +35,14 @@ jobs:
           path: '.'
 
       # 第三步：将固件打包成 ZIP 文件
-      - name: Package firmware
+      - name: Package firmware with Python
+        id: package-firmware
         run: |
-          # !!! 重要：请将下面的 'your-project-name' 替换为您项目的真实名称 !!!
-          PROJECT_NAME=idol_c3
-          
-          mkdir -p firmware_package
-          cp build/bootloader/bootloader.bin firmware_package/
-          cp build/partition_table/partition-table.bin firmware_package/
-          cp "build/${PROJECT_NAME}.bin" firmware_package/
-          cp build/flasher_args.json firmware_package/
-          
-          # 使用 github.ref_name 获取干净的标签名 (例如 v1.0.1)
-          zip -r "firmware-${{ github.ref_name }}-${{ steps.build-project.outputs.target }}.zip" firmware_package
+          python scripts/package_firmware.py \
+            --build-dir build \
+            --output-dir firmware_package \
+            --ref-name "${{ github.ref_name }}" \
+            --target "${{ steps.build-project.outputs.target }}
 
       # 第四步：根据标签创建 GitHub Release
       - name: Create Release
@@ -73,6 +68,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./firmware-${{ github.ref_name }}-${{ steps.build-project.outputs.target }}.zip
-          asset_name: firmware-${{ github.ref_name }}-${{ steps.build-project.outputs.target }}.zip
+          # 使用 package-firmware 步骤的输出作为 asset_path
+          asset_path: ./${{ steps.package-firmware.outputs.zip_filename }}
+          # 同样，使用输出作为 asset_name
+          asset_name: ${{ steps.package-firmware.outputs.zip_filename }}
           asset_content_type: application/zip
