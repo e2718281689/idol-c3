@@ -90,8 +90,9 @@ def main():
     print("打包成功！")
     print(f"已生成: {zip_filename_base}.zip")
 
+    zip_full_filename = f"{zip_filename_base}.zip"
     # 7. 将最终的文件名设置为 GitHub Actions 的输出
-    set_github_output("zip_filename", zip_filename_base)
+    set_github_output("zip_filename", zip_full_filename)
 
 if __name__ == "__main__":
     main()
