@@ -42,7 +42,7 @@ jobs:
             --build-dir build \
             --output-dir firmware_package \
             --ref-name "${{ github.ref_name }}" \
-            --target "${{ steps.build-project.outputs.target }}
+            --target "${{ steps.build-project.outputs.target }}"
 
       # 第四步：根据标签创建 GitHub Release
       - name: Create Release
