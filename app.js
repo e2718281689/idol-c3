@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chipSelect = document.getElementById('chip-select');
     const log = document.getElementById('log');
 
-    const FIRMWARE_FILENAME = 'firmware-v1.0.1-.zip'; // 您需要确保这个文件名是正确的
+    const FIRMWARE_FILENAME = 'xxx.zip'; // 您需要确保这个文件名是正确的
 
     const FIRMWARE_URL = `./${FIRMWARE_FILENAME}`; // 直接使用相对路径！
 
@@ -69,8 +69,6 @@ flashButton.addEventListener('click', async () => {
     terminal.writeLine('开始烧录流程...');
 
     try {
-        const FIRMWARE_FILENAME = 'firmware-v1.0.1-.zip'; // 请确保这是 gh-pages 分支中的正确文件名
-        const FIRMWARE_URL = `./${FIRMWARE_FILENAME}`;
 
         terminal.writeLine(`正在下载固件: ${FIRMWARE_FILENAME}...`);
         
