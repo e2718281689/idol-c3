@@ -1,0 +1,68 @@
+# =========================================
+# General / OS / IDE
+# =========================================
+# IDE settings
+.idea/
+.vscode/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Environment variables - VERY IMPORTANT!
+.env
+.env.*
+!.env.example
+
+
+# =========================================
+# Backend - Python / FastAPI
+# =========================================
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Python virtual environment
+# Common names are .venv, venv, env
+.venv/
+venv/
+env/
+
+# Python packaging files
+*.egg-info/
+dist/
+build/
+
+
+# =========================================
+# Frontend - Node.js / Vite
+# =========================================
+# Dependencies - This is the most important one!
+node_modules/
+ild output
+dist/
+che
+.vite/
+
+# NPM, PNPM, Yarn log files
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log
+yarn-debug.log
+
+
+# =========================================
+# Firmware Binaries (Special Case)
+# =========================================
+# The 'firmware' directory contains binary build artifacts.
+# In a professional setup, the firmware's source code would be in its own repository.
+# The CI/CD pipeline would build it and place the binaries where the flasher needs them.
+# To keep this example project simple and self-contained, we are COMMITTING the binaries.
+# If you prefer to ignore them (e.g., if they are very large), uncomment the line below:
+# backend/firmware/
+
